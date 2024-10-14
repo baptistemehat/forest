@@ -1,0 +1,72 @@
+name: Cargo CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+  pull_request:
+    branches:
+      - main
+      - dev
+
+env:
+  # WARNING: GH actions do not allow to use a variable to define another
+  # So if one of the following two variables gets modified, please also modify the other:
+  # - DATABASE_PATH
+  # - DATABAE_URL
+
+  # Path to SQLite database file to initialize.
+  # SQLite database is required by sqlx crate at compile time for comp time SQL query validation.
+  DATABASE_PATH: 'test.db'
+  
+  # Environment variable needed by sqlx at compile time for comp time SQL query validation.
+  DATABASE_URL: 'sqlite:test.db'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: ./.gitea/actions/setup-sqlite-db
+        with:
+          database_path: $DATABASE_PATH
+      - run: cargo test
+
+  fmt:
+    name: Format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: ./.gitea/actions/setup-sqlite-db
+        with:
+          database_path: $DATABASE_PATH
+      - run: rustup component add rustfmt
+      - run: cargo fmt --all --check -- --color=always
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: ./.gitea/actions/setup-sqlite-db
+        with:
+          database_path: $DATABASE_PATH
+      - run: rustup component add clippy
+      - run: cargo clippy --all -- -Dwarnings -Dclippy::all
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: ./.gitea/actions/setup-sqlite-db
+        with:
+          database_path: $DATABASE_PATH
+      - run: cargo build

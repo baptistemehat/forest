@@ -1,0 +1,20 @@
+name: "Setup SQLite DB"
+
+description: "Action to setup SQLite DB"
+
+inputs:
+  database_path:
+    description: Path to the SQLite DB to initialize (relative to the root of the repo)
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: ryohidaka/action-setup-sqlite@v1.2.0
+    - name: Create tables  test DB 
+      shell: bash
+      run: |
+        sqlite3 "${DATABASE_PATH}" ".read src/sql/create_tables.sql"
+        echo "Initialized databse: ${DATABASE_PATH}"
+
+

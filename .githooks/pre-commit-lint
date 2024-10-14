@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Git pre-commit hook
+# This git hook runs linting and formatting checks against all indexed files (ie. files about to be committed)
+#
+# Inspired from Quentin Santos:
+# https://qsantos.fr/2023/11/08/the-secret-to-a-green-ci-efficient-pre-commit-hooks-with-checkout-index/
+
+
+# -E: shell functions inherit traps (as if traps were also declared in these functions)
+# -e: exit immediatly at first failed command
+# -u: errors on unset variables
+set -Eeu
+
+echo "> Pre-commit hook triggered..."
+
+# create tmp dir to isolate indexed files
+TEMPDIR=$(mktemp -d)
+
+# setup trap to clean tmp dir on exit or user termination
+trap "rm -rf $TEMPDIR;echo '> Pre-commit hook failed. Nothing was committed'" EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+
+# checkout git index in temp dir
+git checkout-index --prefix=$TEMPDIR/ -af
+
+# give cargo the path to the target dir so the following cargo commands do not rebuild if not necessary
+GIT_ROOT=$(git rev-parse --show-toplevel)
+export CARGO_TARGET_DIR="${GIT_ROOT}/target"
+
+# check formatting
+(cd $TEMPDIR; cargo fmt --all)
+
+# lint all packages
+# treat all (rustc) warnings as errors
+# treat all clippy lints as errors
+(cd $TEMPDIR; cargo clippy --all -- -Dwarnings -Dclippy::all)
+
+
