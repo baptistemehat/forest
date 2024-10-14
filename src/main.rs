@@ -1,8 +1,8 @@
 use clap::Parser;
 use std::process;
 
-mod forest;
 mod cli;
+mod forest;
 
 #[tokio::main]
 async fn main() {
