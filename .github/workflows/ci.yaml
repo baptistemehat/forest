@@ -2,15 +2,15 @@ name: Cargo CI
 
 on:
   push:
-  #   branches:
-  #     - main
-  #     - dev
-  #
-  # pull_request:
-  #   branches:
-  #     - main
-  #     - dev
-  #
+    branches:
+      - main
+      - dev
+
+  pull_request:
+    branches:
+      - main
+      - dev
+
 env:
   # WARNING: GH actions do not allow to use a variable to define another
   # So if one of the following two variables gets modified, please also modify the other:
