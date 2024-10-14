@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: ./.gitea/actions/setup-sqlite-db
+      - uses: ./.github/actions/setup-sqlite-db
         with:
           database_path: $DATABASE_PATH
       - run: cargo test
@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: ./.gitea/actions/setup-sqlite-db
+      - uses: ./.github/actions/setup-sqlite-db
         with:
           database_path: $DATABASE_PATH
       - run: rustup component add rustfmt
@@ -54,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: ./.gitea/actions/setup-sqlite-db
+      - uses: ./.github/actions/setup-sqlite-db
         with:
           database_path: $DATABASE_PATH
       - run: rustup component add clippy
@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: ./.gitea/actions/setup-sqlite-db
+      - uses: ./.github/actions/setup-sqlite-db
         with:
           database_path: $DATABASE_PATH
       - run: cargo build
