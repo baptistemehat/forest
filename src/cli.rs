@@ -158,7 +158,7 @@ pub enum TreeCommands {
         new_name: String,
     },
 
-    /// Show description of a tree 
+    /// Show description of a tree
     Describe {
         /// Name of the tree
         #[arg(value_name = "NAME")]
@@ -166,7 +166,7 @@ pub enum TreeCommands {
         name: String,
     },
 
-    /// Edit description of a tree 
+    /// Edit description of a tree
     Edit {
         /// Name of the tree
         #[arg(value_name = "NAME")]
