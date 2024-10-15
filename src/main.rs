@@ -73,7 +73,7 @@ async fn main() {
         }
 
         cli::Commands::Tree { command } => match command {
-            cli::TreeCommands::List {} => {
+            cli::TreeCommands::List => {
                 forest::tree::list().await;
             }
 
@@ -128,9 +128,9 @@ async fn main() {
             });
         }
 
-        cli::Commands::Status { show_uid } => {
-            forest::status(show_uid).await.unwrap_or_else(|e| {
-                eprintln!("status: {e}");
+        cli::Commands::Report { show_uid } => {
+            forest::report(show_uid).await.unwrap_or_else(|e| {
+                eprintln!("report: {e}");
                 process::exit(1);
             });
         }
@@ -142,6 +142,12 @@ async fn main() {
                     eprintln!("start: {e}");
                     process::exit(1);
                 });
+        }
+        cli::Commands::Status => {
+            forest::timetracking::status().await.unwrap_or_else(|e| {
+                eprintln!("status: {e}");
+                process::exit(1);
+            });
         }
     }
 }
