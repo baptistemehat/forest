@@ -112,6 +112,14 @@ pub enum Commands {
         #[arg(short = 'u', long = "show-uid")]
         show_uid: bool,
     },
+
+    // Start recording time
+    Start {
+        /// Name of tree for which to record time
+        #[arg(value_name = "TREE")]
+        #[arg(value_parser = types::tree_name_parser)]
+        tree_name: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]

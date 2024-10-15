@@ -134,5 +134,14 @@ async fn main() {
                 process::exit(1);
             });
         }
+
+        cli::Commands::Start { tree_name } => {
+            forest::timetracking::start(tree_name)
+                .await
+                .unwrap_or_else(|e| {
+                    eprintln!("start: {e}");
+                    process::exit(1);
+                });
+        }
     }
 }
