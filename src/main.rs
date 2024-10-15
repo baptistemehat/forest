@@ -143,6 +143,13 @@ async fn main() {
                     process::exit(1);
                 });
         }
+
+        cli::Commands::Stop => {
+            forest::timetracking::stop().await.unwrap_or_else(|e| {
+                eprintln!("stop: {e}");
+                process::exit(1);
+            });
+        }
         cli::Commands::Status => {
             forest::timetracking::status().await.unwrap_or_else(|e| {
                 eprintln!("status: {e}");

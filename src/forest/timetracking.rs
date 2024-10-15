@@ -52,6 +52,9 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
         },
     };
 
+    // stop any previous recording
+    let _ = stop().await;
+
     // get current local time
     let now = Local::now();
 
@@ -99,6 +102,84 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Stops the current time recording(s)
+///
+/// # Errors
+/// Returns an error if no recording were started
+///
+/// # Panics
+/// This function may panic if database operations fail
+pub async fn stop() -> Result<(), Box<dyn Error>> {
+    let pool = dbutils::load_db().await;
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    // get all started time tracking frames
+    // note: there should only be one simultaneous time recording  at any time
+    let query_result = sqlx::query!(
+        r#"
+        SELECT "start", "tree_name"
+        FROM frame f INNER JOIN task t ON f.task_id = t.id
+        WHERE f."end" is NULL;
+        "#,
+    )
+    .fetch_all(&mut *conn)
+    .await;
+
+    // error handling
+    let started_frames = match query_result {
+        Ok(records) => {
+            if records.is_empty() {
+                return Err("No recording was started".into());
+            } else {
+                records
+            }
+        }
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+    };
+
+    // update end time of started time tracking frame(s)
+    let end_time = Local::now().timestamp_millis();
+    let query_result = sqlx::query!(
+        r#"
+            UPDATE frame
+            SET "end" = ?
+            FROM frame f INNER JOIN task t ON f.task_id = t.id
+            WHERE f."end" is NULL;
+            "#,
+        end_time
+    )
+    .execute(&mut *conn)
+    .await;
+
+    // error handling
+    match query_result {
+        Ok(result) => {
+            if result.rows_affected() < 1 {
+                panic!("Stopping a recording should at least update one row");
+            }
+        }
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+    };
+
+    // in case multiple time recordings were started
+    // print stopping message for each
+    for frame in started_frames {
+        let start_time: DateTime<Local> =
+            DateTime::from_timestamp_millis(frame.start).unwrap().into();
+        println!(
+            "Stopped recording time on tree '{}' (Sarted at {})",
+            frame.tree_name,
+            start_time.format("%Y-%m-%d %H:%M:%S")
+        );
+    }
+
+    Ok(())
+}
+
 /// Prints the name of the current tree and current time tracking frames
 ///
 /// # Errors
@@ -126,9 +207,9 @@ pub async fn status() -> Result<(), Box<dyn Error>> {
     let query_result = sqlx::query!(
         r#"
         SELECT "start", "tree_name"
-        FROM frame
-        INNER JOIN task ON frame.task_id = task.id
-        WHERE "end" is null;
+        FROM frame f
+        INNER JOIN task t ON f.task_id = t.id
+        WHERE f."end" is NULL;
         "#,
     )
     .fetch_optional(&mut *conn)

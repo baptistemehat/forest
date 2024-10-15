@@ -113,7 +113,7 @@ pub enum Commands {
         show_uid: bool,
     },
 
-    // Start recording time
+    /// Start recording time
     Start {
         /// Name of tree for which to record time
         #[arg(value_name = "TREE")]
@@ -121,7 +121,10 @@ pub enum Commands {
         tree_name: Option<String>,
     },
 
-    // Show current time recording
+    /// Stop current time recording
+    Stop,
+
+    /// Show current time recording
     Status,
 }
 
