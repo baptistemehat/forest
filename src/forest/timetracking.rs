@@ -1,4 +1,4 @@
-use chrono::Local;
+use chrono::{DateTime, Local};
 use std::error::Error;
 
 use super::dbutils;
@@ -95,6 +95,67 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
         "Started recording time on tree '{tree_name}' at {}",
         now.format("%Y-%m-%d %H:%M:%S")
     );
+
+    Ok(())
+}
+
+/// Prints the name of the current tree and current time tracking frames
+///
+/// # Errors
+/// Returns an error if the forest is empty
+///
+/// # Panics
+/// This function may panic if database operations fail
+pub async fn status() -> Result<(), Box<dyn Error>> {
+    let pool = dbutils::load_db().await;
+
+    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
+        Some(name) => name,
+        None => return Err(
+            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
+                .into(),
+        ),
+    };
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    // get current frame if any
+    let query_result = sqlx::query!(
+        r#"
+        SELECT "start", "tree_name"
+        FROM frame
+        INNER JOIN task ON frame.task_id = task.id
+        WHERE "end" is null;
+        "#,
+    )
+    .fetch_optional(&mut *conn)
+    .await;
+
+    // error handling
+    let current_frame = match query_result {
+        Ok(record) => record,
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+    };
+
+    // print current tree
+    println!("On tree '{current_tree_name}'");
+
+    // print current time tracking recording if any
+    match current_frame {
+        Some(frame) => {
+            let start_time: DateTime<Local> =
+                DateTime::from_timestamp_millis(frame.start).unwrap().into();
+            println!(
+                "Recording time on tree '{}'. Sarted at {}",
+                frame.tree_name,
+                start_time.format("%Y-%m-%d %H:%M:%S")
+            );
+        }
+        None => println!("No recording started."),
+    }
 
     Ok(())
 }

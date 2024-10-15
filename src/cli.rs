@@ -106,8 +106,8 @@ pub enum Commands {
         name: String,
     },
 
-    /// Show forest status
-    Status {
+    /// Show forest report
+    Report {
         /// Show task uids
         #[arg(short = 'u', long = "show-uid")]
         show_uid: bool,
@@ -120,6 +120,9 @@ pub enum Commands {
         #[arg(value_parser = types::tree_name_parser)]
         tree_name: Option<String>,
     },
+
+    // Show current time recording
+    Status,
 }
 
 #[derive(Subcommand)]

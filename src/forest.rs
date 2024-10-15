@@ -13,7 +13,7 @@ pub mod types;
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn status(show_uid: bool) -> Result<(), Box<dyn Error>> {
+pub async fn report(show_uid: bool) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let current_tree_name =
