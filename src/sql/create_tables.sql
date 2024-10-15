@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS task (
     FOREIGN KEY (tree_name) REFERENCES tree(name) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+-- state table stores current state
 CREATE TABLE IF NOT EXISTS state (
     current_tree TEXT DEFAULT NULL,
     FOREIGN KEY (current_tree) REFERENCES tree(name) ON UPDATE CASCADE ON DELETE
@@ -23,16 +24,23 @@ CREATE TABLE IF NOT EXISTS state (
 );
 
 -- insert initial empty current_tree
-INSERT INTO state("current_tree")
-SELECT NULL
-WHERE NOT EXISTS (SELECT * FROM state);
+INSERT INTO
+    state("current_tree")
+SELECT
+    NULL
+WHERE
+    NOT EXISTS (
+        SELECT
+            *
+        FROM
+            state
+    );
 
-
--- -- frame table store time frames
--- CREATE table if not EXISTS frame (
--- 	id integer primary key,
--- 	start integer not null,
--- 	stop integer,
--- 	task integer not null,
--- 	foreign key (task) references task(id)
--- );
+-- frame table stores time frames
+CREATE TABLE IF NOT EXISTS frame (
+    id text NOT NULL PRIMARY KEY,
+    "start" integer NOT NULL,
+	"end" integer,
+    task_id text NOT NULL,
+    FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
+);
