@@ -46,7 +46,7 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
         Ok(record) => record,
         Err(query_error) => match query_error {
             sqlx::Error::RowNotFound => {
-                return Err(format!("Tree '{tree_name} not found").into());
+                return Err(format!("Tree '{tree_name}' not found").into());
             }
             other_error => panic!("Database query failed: {other_error}"),
         },

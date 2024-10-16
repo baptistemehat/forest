@@ -73,8 +73,13 @@ async fn main() {
         }
 
         cli::Commands::Tree { command } => match command {
-            cli::TreeCommands::List => {
-                forest::tree::list().await;
+            cli::TreeCommands::List { format, show_uid } => {
+                forest::tree::list(format.unwrap_or_default(), show_uid)
+                    .await
+                    .unwrap_or_else(|e| {
+                        eprintln!("list: {e}");
+                        process::exit(1);
+                    });
             }
 
             cli::TreeCommands::Add {
@@ -124,13 +129,6 @@ async fn main() {
         cli::Commands::Switch { name } => {
             forest::tree::switch(&name).await.unwrap_or_else(|e| {
                 eprintln!("switch: {e}");
-                process::exit(1);
-            });
-        }
-
-        cli::Commands::Report { show_uid } => {
-            forest::report(show_uid).await.unwrap_or_else(|e| {
-                eprintln!("report: {e}");
                 process::exit(1);
             });
         }

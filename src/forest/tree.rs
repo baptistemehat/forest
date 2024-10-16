@@ -131,28 +131,93 @@ pub async fn remove(name: &String) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Lists all trees in the forest
+/// Prints the current status of the forest
+///
+/// # Errors
+/// Returns an error if the forest is empty
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn list() {
+pub async fn list(format: types::ListFormat, show_uid: bool) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
+
+    let current_tree_name =
+        match dbutils::get_current_tree_name(&pool).await {
+            Some(name) => name,
+            None => return Err(
+                "Nothing to display. It seems like your forest is empty.\nConsider adding a tree."
+                    .into(),
+            ),
+        };
 
     let mut conn = pool
         .acquire()
         .await
         .expect("Acquiring connection to database should succeed");
 
-    // get the name of all trees
-    let query_result = sqlx::query!(r#"SELECT name FROM tree;"#)
-        .fetch_all(&mut *conn)
-        .await
-        .expect("Database query should succeed");
+    // foreach tree get root task and first task if any
+    let query_result = sqlx::query!(
+        r#"
+        -- foreach tree, get the root task and the first task if any
 
-    // print all tree names
-    for tree in query_result {
-        println!("   {}", tree.name);
+        SELECT tree_name, name, id, "left"
+        FROM task 
+        WHERE "left" BETWEEN 1 AND 2
+        ORDER BY tree_name, "left" ASC;
+        "#
+    )
+    .fetch_all(&mut *conn)
+    .await;
+
+    // error handling
+    let tasks = match query_result {
+        Ok(tasks) => tasks,
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+    };
+
+    // display depends on formatting config
+    match format {
+        types::ListFormat::Short => {
+            for task in tasks {
+                // in short formatting, only display tree names
+                if task.left == 1 {
+                    // identify current tree
+                    if task.tree_name.eq(&current_tree_name) {
+                        print!("* ");
+                    } else {
+                        print!("  ");
+                    }
+                    println!("{}", task.tree_name);
+                }
+            }
+        }
+        types::ListFormat::Long => {
+            for task in tasks {
+                // print tree name
+                if task.left == 1 {
+                    if task.tree_name.eq(&current_tree_name) {
+                        print!("* ");
+                    } else {
+                        print!("  ");
+                    }
+
+                    println!("\x1b[1;38;5;0;48;5;2m{}\x1b[0m", task.tree_name);
+
+                // print first tasks
+                } else {
+                    print!("    \x1b[1mNext task:\x1b[0m {}", task.name);
+                    if show_uid {
+                        print!(" ({})", task.id);
+                    }
+                    println!();
+                    println!();
+                }
+            }
+            println!();
+        }
     }
+
+    Ok(())
 }
 
 /// Prints the description of the given tree

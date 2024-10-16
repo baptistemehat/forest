@@ -106,13 +106,6 @@ pub enum Commands {
         name: String,
     },
 
-    /// Show forest report
-    Report {
-        /// Show task uids
-        #[arg(short = 'u', long = "show-uid")]
-        show_uid: bool,
-    },
-
     /// Start recording time
     Start {
         /// Name of tree for which to record time
@@ -132,7 +125,15 @@ pub enum Commands {
 pub enum TreeCommands {
     /// List trees in the current forest
     #[clap(alias = "ls")]
-    List,
+    List {
+        /// Formatting options
+        #[arg(short = 'f', long = "format", value_name = "FORMAT")]
+        format: Option<types::ListFormat>,
+
+        /// Show task uids
+        #[arg(short = 'u', long = "show-uid")]
+        show_uid: bool,
+    },
 
     /// Add a new tree
     Add {
