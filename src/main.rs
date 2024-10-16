@@ -154,5 +154,9 @@ async fn main() {
                 process::exit(1);
             });
         }
+
+        cli::Commands::Report => {
+            forest::timetracking::report().await;
+        }
     }
 }

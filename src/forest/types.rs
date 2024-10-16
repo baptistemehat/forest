@@ -8,7 +8,7 @@ pub enum ListFormat {
     #[default]
     Short,
 
-    // display tree names, time spent on them and next task
+    // display tree names, and next task
     Long,
 }
 
