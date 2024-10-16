@@ -119,6 +119,9 @@ pub enum Commands {
 
     /// Show current time recording
     Status,
+
+    /// Reports time spent on each tree
+    Report,
 }
 
 #[derive(Subcommand)]

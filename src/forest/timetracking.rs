@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, TimeDelta};
 use std::error::Error;
 
 use super::dbutils;
@@ -239,4 +239,52 @@ pub async fn status() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+/// Prints tree names and time spent on each
+///
+/// # Errors
+/// Returns an error if the forest is empty
+///
+/// # Panics
+/// This function may panic if database operations fail
+pub async fn report() {
+    let pool = dbutils::load_db().await;
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    // get total time spent on every tree
+    let query_result = sqlx::query!(
+        r#"
+        -- get total time spent on each tree
+
+        SELECT tree_name as name, SUM(f."end" - f."start") as total_time_spent
+        FROM frame f
+        RIGHT JOIN task t ON f.task_id = t.id
+        GROUP BY tree_name;
+        "#,
+    )
+    .fetch_all(&mut *conn)
+    .await;
+
+    // error handling
+    let records = match query_result {
+        Ok(records) => records,
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+    };
+
+    // print tree names and time spent
+    for tree in records {
+        let time_delta = TimeDelta::milliseconds(tree.total_time_spent.unwrap_or(0));
+        let hours = time_delta.num_hours();
+        let minutes = time_delta.num_minutes();
+        let seconds = time_delta.num_seconds() % 60;
+        print!("{} - {}h {}m {}s", tree.name, hours, minutes, seconds);
+
+        println!();
+        println!();
+    }
 }
