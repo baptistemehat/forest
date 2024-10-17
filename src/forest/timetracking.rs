@@ -141,15 +141,15 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
+    let now = Local::now();
     // update end time of started time tracking frame(s)
-    let end_time = Local::now().timestamp_millis();
+    let end_time = now.timestamp_millis();
     let query_result = sqlx::query!(
         r#"
-            UPDATE frame
-            SET "end" = ?
-            FROM frame f INNER JOIN task t ON f.task_id = t.id
-            WHERE f."end" is NULL;
-            "#,
+        UPDATE frame
+        SET "end" = ?
+        WHERE "end" is NULL;
+        "#,
         end_time
     )
     .execute(&mut *conn)
@@ -171,8 +171,9 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
         let start_time: DateTime<Local> =
             DateTime::from_timestamp_millis(frame.start).unwrap().into();
         println!(
-            "Stopped recording time on tree '{}' (Sarted at {})",
+            "Stopped recording time on tree '{}' at {} (Sarted at {})",
             frame.tree_name,
+            now.format("%Y-%m-%d %H:%M:%S"),
             start_time.format("%Y-%m-%d %H:%M:%S")
         );
     }
@@ -280,7 +281,7 @@ pub async fn report() {
     for tree in records {
         let time_delta = TimeDelta::milliseconds(tree.total_time_spent.unwrap_or(0));
         let hours = time_delta.num_hours();
-        let minutes = time_delta.num_minutes();
+        let minutes = time_delta.num_minutes() % 60;
         let seconds = time_delta.num_seconds() % 60;
         print!("{} - {}h {}m {}s", tree.name, hours, minutes, seconds);
 
