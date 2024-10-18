@@ -64,7 +64,7 @@ pub enum Commands {
     },
 
     /// Show description of a task in the current tree
-    Describe {
+    Show {
         /// Uid of the task
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
@@ -96,6 +96,12 @@ pub enum Commands {
     Tree {
         #[command(subcommand)]
         command: TreeCommands,
+    },
+
+    /// Perform operations on notes
+    Note {
+        #[command(subcommand)]
+        command: NoteCommands,
     },
 
     /// Switch to another tree
@@ -177,7 +183,7 @@ pub enum TreeCommands {
     },
 
     /// Show description of a tree
-    Describe {
+    Show {
         /// Name of the tree
         #[arg(value_name = "NAME")]
         #[arg(value_parser = types::tree_name_parser)]
@@ -191,6 +197,28 @@ pub enum TreeCommands {
         #[arg(value_parser = types::tree_name_parser)]
         name: String,
     },
+}
+
+#[derive(Subcommand)]
+pub enum NoteCommands {
+    /// List all notes
+    List {
+        /// Show task uids
+        #[arg(short = 'u', long = "show-uid")]
+        show_uid: bool,
+    },
+
+    /// Create a new note associated to the current tree
+    Add {
+        /// Name of tree for which to add a note
+        #[arg(value_name = "TREE")]
+        #[arg(value_parser = types::tree_name_parser)]
+        tree_name: Option<String>,
+    },
+
+    Remove,
+    Show,
+    Edit,
 }
 
 #[test]

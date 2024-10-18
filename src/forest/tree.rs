@@ -227,7 +227,7 @@ pub async fn list(format: types::ListFormat, show_uid: bool) -> Result<(), Box<d
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn describe(name: &String) -> Result<(), Box<dyn Error>> {
+pub async fn show(name: &String) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let mut conn = pool

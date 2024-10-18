@@ -520,7 +520,7 @@ pub async fn list(show_key: bool) -> Result<(), Box<dyn Error>> {
 }
 
 /// Shows the description of a task in the current tree
-pub async fn describe(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
