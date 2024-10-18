@@ -1,5 +1,11 @@
+use super::types;
+use std::path::PathBuf;
+
 /// Name of config directory for the application
 const FOREST_CONFIG_DIR: &str = "forest";
+
+/// Name of sub directory storing notes
+const FOREST_NOTE_SUBDIR: &str = "notes";
 
 /// Name of db file storing user data
 const SQLITE_DB_FILE_NAME: &str = "forest.db";
@@ -29,7 +35,7 @@ pub async fn load_db() -> sqlx::Pool<sqlx::Sqlite> {
         .unwrap_or_else(|e| panic!("Cannot locate home directory: {e}"));
 
     // get path to database file
-    let forest_path = match xdg_dirs.find_config_file(SQLITE_DB_FILE_NAME) {
+    let forest_db_path = match xdg_dirs.find_config_file(SQLITE_DB_FILE_NAME) {
         Some(path) => path,
         None => match xdg_dirs.place_config_file(SQLITE_DB_FILE_NAME) {
             Ok(path) => path,
@@ -39,7 +45,7 @@ pub async fn load_db() -> sqlx::Pool<sqlx::Sqlite> {
 
     // database connection options
     let options = sqlx::sqlite::SqliteConnectOptions::new()
-        .filename(forest_path)
+        .filename(forest_db_path)
         .create_if_missing(true);
 
     // connect to database
@@ -90,5 +96,22 @@ pub async fn get_current_tree_name(pool: &sqlx::sqlite::SqlitePool) -> Option<St
         // record.current_tree is itself an option since its value in db can be null
         // since the column type in db does not prevent it to be null
         Some(record) => record.current_tree,
+    }
+}
+
+pub fn get_note_path(uid: &types::Uid) -> Option<PathBuf> {
+    // get config directory
+    let xdg_dirs = xdg::BaseDirectories::with_prefix(FOREST_CONFIG_DIR)
+        .unwrap_or_else(|e| panic!("Cannot locate home directory: {e}"));
+
+    let file_name = format!("{FOREST_NOTE_SUBDIR}/{uid}.md");
+
+    // get path to database file
+    match xdg_dirs.find_config_file(&file_name) {
+        Some(path) => Some(path),
+        None => match xdg_dirs.place_config_file(&file_name) {
+            Ok(path) => Some(path),
+            Err(_) => None,
+        },
     }
 }
