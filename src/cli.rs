@@ -226,7 +226,14 @@ pub enum NoteCommands {
     },
 
     Show,
-    Edit,
+
+    /// Edit a note
+    Edit {
+        /// Uid of the note
+        #[arg(value_name = "UID")]
+        #[arg(value_parser = types::uid_parser)]
+        uid: types::Uid,
+    },
 }
 
 #[test]

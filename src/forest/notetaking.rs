@@ -1,6 +1,6 @@
 use super::dbutils;
 use chrono::{DateTime, Local};
-use edit;
+use edit as edit_mod;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{self, BufRead};
@@ -24,7 +24,7 @@ pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     };
 
     // open default editor for user to edit the new note
-    if let Err(e) = edit::edit_file(new_note_path) {
+    if let Err(e) = edit_mod::edit_file(new_note_path) {
         panic!("Failed to open new note in default editor: {e}");
     }
 
@@ -229,6 +229,27 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     }
 
     println!("Removed note {}", uid);
+
+    Ok(())
+}
+
+/// Edit a note
+///
+/// # Errors
+/// Returns an error if the note does not exist
+///
+/// # Panics
+/// This function may panic if database operations fail
+pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+    let note_path = match dbutils::get_note_path(uid) {
+        Some(path) => path,
+        None => return Err(format!("Could not find note {uid}").into()),
+    };
+
+    // open default editor for user to edit the note
+    if let Err(e) = edit_mod::edit_file(note_path) {
+        panic!("Failed to open new note in default editor: {e}");
+    }
 
     Ok(())
 }
