@@ -144,7 +144,12 @@ async fn main() {
                         process::exit(1);
                     });
             }
-            cli::NoteCommands::Remove => {}
+            cli::NoteCommands::Remove { uid } => {
+                forest::notetaking::remove(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("note remove: {e}");
+                    process::exit(1);
+                });
+            }
             cli::NoteCommands::Show => {}
             cli::NoteCommands::Edit => {}
         },

@@ -163,7 +163,7 @@ pub enum TreeCommands {
     /// Remove a tree
     #[clap(alias = "rm")]
     Remove {
-        /// Name of the new tree
+        /// Name of the tree
         #[arg(value_name = "NAME")]
         #[arg(value_parser = types::tree_name_parser)]
         name: String,
@@ -216,7 +216,15 @@ pub enum NoteCommands {
         tree_name: Option<String>,
     },
 
-    Remove,
+    /// Remove a note
+    #[clap(alias = "rm")]
+    Remove {
+        /// Uid of the note
+        #[arg(value_name = "UID")]
+        #[arg(value_parser = types::uid_parser)]
+        uid: types::Uid,
+    },
+
     Show,
     Edit,
 }

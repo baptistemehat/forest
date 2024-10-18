@@ -2,7 +2,7 @@ use super::dbutils;
 use chrono::{DateTime, Local};
 use edit;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, BufRead};
 
 use super::types;
@@ -108,6 +108,13 @@ pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// List all notes
+///
+/// # Errors
+/// Returns an error if no notes exist in the forest
+///
+/// # Panics
+/// This function may panic if database operations fail
 pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
@@ -177,6 +184,51 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
             None => println!("\x1b[1mEmpty Note\x1b[0m"),
         }
     }
+
+    Ok(())
+}
+
+/// Remove a note
+///
+/// # Errors
+/// Returns an error if the note does not exist
+///
+/// # Panics
+/// This function may panic if database operations fail
+pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+    let pool = dbutils::load_db().await;
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    // remove note from file system
+    let note_file_path = dbutils::get_note_path(uid)
+        .expect("A note file should be associated with each note in database");
+    fs::remove_file(note_file_path).expect("Failed to remove note file from filesystem");
+
+    // remove note from the note table
+    let query_result = sqlx::query!(
+        r#"
+        DELETE FROM note
+        WHERE id = ?;
+        "#,
+        uid
+    )
+    .execute(&mut *conn)
+    .await;
+
+    match query_result {
+        Ok(result) => {
+            if result.rows_affected() < 1 {
+                return Err(format!("Note '{uid}' not found").into());
+            }
+        }
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+    }
+
+    println!("Removed note {}", uid);
 
     Ok(())
 }
