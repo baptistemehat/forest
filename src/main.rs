@@ -151,7 +151,12 @@ async fn main() {
                 });
             }
             cli::NoteCommands::Show => {}
-            cli::NoteCommands::Edit => {}
+            cli::NoteCommands::Edit { uid } => {
+                forest::notetaking::edit(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("note edit: {e}");
+                    process::exit(1);
+                });
+            }
         },
 
         cli::Commands::Switch { name } => {
