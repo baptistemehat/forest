@@ -202,6 +202,7 @@ pub enum TreeCommands {
 #[derive(Subcommand)]
 pub enum NoteCommands {
     /// List all notes
+    #[clap(alias = "ls")]
     List {
         /// Show task uids
         #[arg(short = 'u', long = "show-uid")]
@@ -225,7 +226,13 @@ pub enum NoteCommands {
         uid: types::Uid,
     },
 
-    Show,
+    /// Show content of a note
+    Show {
+        /// Uid of the note
+        #[arg(value_name = "UID")]
+        #[arg(value_parser = types::uid_parser)]
+        uid: types::Uid,
+    },
 
     /// Edit a note
     Edit {

@@ -1,6 +1,6 @@
 use super::dbutils;
 use chrono::{DateTime, Local};
-use edit as edit_mod;
+use edit as default_editor;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{self, BufRead};
@@ -24,7 +24,7 @@ pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     };
 
     // open default editor for user to edit the new note
-    if let Err(e) = edit_mod::edit_file(new_note_path) {
+    if let Err(e) = default_editor::edit_file(new_note_path) {
         panic!("Failed to open new note in default editor: {e}");
     }
 
@@ -153,7 +153,9 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
         .iter()
         .max_by(|a, b| a.tree_name.len().cmp(&b.tree_name.len()))
         .map(|a| a.tree_name.len())
-        .expect("REPLACE ME");
+        .expect(
+            "At this point in the function, the itterator should point to a non empty collection",
+        );
 
     // print each note
     for note in records {
@@ -237,9 +239,6 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
 ///
 /// # Errors
 /// Returns an error if the note does not exist
-///
-/// # Panics
-/// This function may panic if database operations fail
 pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     let note_path = match dbutils::get_note_path(uid) {
         Some(path) => path,
@@ -247,9 +246,65 @@ pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     };
 
     // open default editor for user to edit the note
-    if let Err(e) = edit_mod::edit_file(note_path) {
+    if let Err(e) = default_editor::edit_file(note_path) {
         panic!("Failed to open new note in default editor: {e}");
     }
+
+    Ok(())
+}
+
+/// Show the content of the note
+///
+/// # Errors
+/// Returns an error if the note does not exist
+pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+    let pool = dbutils::load_db().await;
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    // get tree name and date of the note
+    let query_result = sqlx::query!(
+        r#"
+        -- get tree name and date of the note
+
+        SELECT tree_name, date
+        FROM note n INNER JOIN task t ON n.task_id = t.id
+        WHERE n.id = ?
+        ORDER BY date DESC;
+        "#,
+        uid
+    )
+    .fetch_one(&mut *conn)
+    .await;
+
+    // error handling
+    let note = match query_result {
+        Ok(r) => r,
+        Err(query_error) => match &query_error {
+            sqlx::Error::RowNotFound => return Err(format!("Note '{uid}' not found").into()),
+            _ => panic!("Database query failed: {query_error}"),
+        },
+    };
+
+    // get note path
+    let note_path = match dbutils::get_note_path(uid) {
+        Some(path) => path,
+        None => return Err(format!("Could not find note {uid}").into()),
+    };
+
+    let note_content = fs::read_to_string(&note_path)
+        .expect("At this point in the function, the note file should exist");
+
+    let note_date: DateTime<Local> = DateTime::from_timestamp_millis(note.date).unwrap().into();
+    println!(
+        "\x1b[1mNote:\x1b[0m   {}   {}   ",
+        note.tree_name,
+        note_date.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!("{note_content}");
 
     Ok(())
 }

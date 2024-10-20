@@ -150,7 +150,13 @@ async fn main() {
                     process::exit(1);
                 });
             }
-            cli::NoteCommands::Show => {}
+            cli::NoteCommands::Show { uid } => {
+                forest::notetaking::show(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("note show: {e}");
+                    process::exit(1);
+                });
+            }
+
             cli::NoteCommands::Edit { uid } => {
                 forest::notetaking::edit(&uid).await.unwrap_or_else(|e| {
                     eprintln!("note edit: {e}");
