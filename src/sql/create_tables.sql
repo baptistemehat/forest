@@ -38,9 +38,16 @@ WHERE
 
 -- frame table stores time frames
 CREATE TABLE IF NOT EXISTS frame (
-    id text NOT NULL PRIMARY KEY,
-    "start" integer NOT NULL,
-	"end" integer,
-    task_id text NOT NULL,
+    id TEXT NOT NULL PRIMARY KEY,
+    "start" INTEGER NOT NULL,
+    "end" INTEGER,
+    task_id TEXT NOT NULL,
+    FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS note (
+    id TEXT NOT NULL PRIMARY KEY,
+    date INTEGER NOT NULL,
+    task_id TEXT NOT NULL,
     FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
 );

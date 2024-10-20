@@ -49,9 +49,9 @@ async fn main() {
                 });
         }
 
-        cli::Commands::Describe { uid } => {
-            forest::task::describe(&uid).await.unwrap_or_else(|e| {
-                eprintln!("describe: {e}");
+        cli::Commands::Show { uid } => {
+            forest::task::show(&uid).await.unwrap_or_else(|e| {
+                eprintln!("show: {e}");
                 process::exit(1);
             });
         }
@@ -111,8 +111,8 @@ async fn main() {
                     });
             }
 
-            cli::TreeCommands::Describe { name } => {
-                forest::tree::describe(&name).await.unwrap_or_else(|e| {
+            cli::TreeCommands::Show { name } => {
+                forest::tree::show(&name).await.unwrap_or_else(|e| {
                     eprintln!("tree show: {e}");
                     process::exit(1);
                 });
@@ -121,6 +121,45 @@ async fn main() {
             cli::TreeCommands::Edit { name } => {
                 forest::tree::edit(&name).await.unwrap_or_else(|e| {
                     eprintln!("tree edit: {e}");
+                    process::exit(1);
+                });
+            }
+        },
+
+        cli::Commands::Note { command } => match command {
+            cli::NoteCommands::List { show_uid } => {
+                forest::notetaking::list(show_uid)
+                    .await
+                    .unwrap_or_else(|e| {
+                        eprintln!("note list: {e}");
+                        process::exit(1);
+                    });
+            }
+
+            cli::NoteCommands::Add { tree_name } => {
+                forest::notetaking::add(tree_name)
+                    .await
+                    .unwrap_or_else(|e| {
+                        eprintln!("note add: {e}");
+                        process::exit(1);
+                    });
+            }
+            cli::NoteCommands::Remove { uid } => {
+                forest::notetaking::remove(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("note remove: {e}");
+                    process::exit(1);
+                });
+            }
+            cli::NoteCommands::Show { uid } => {
+                forest::notetaking::show(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("note show: {e}");
+                    process::exit(1);
+                });
+            }
+
+            cli::NoteCommands::Edit { uid } => {
+                forest::notetaking::edit(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("note edit: {e}");
                     process::exit(1);
                 });
             }
