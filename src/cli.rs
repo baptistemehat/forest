@@ -118,10 +118,20 @@ pub enum Commands {
         #[arg(value_name = "TREE")]
         #[arg(value_parser = types::tree_name_parser)]
         tree_name: Option<String>,
+
+        /// Start date and time of recording
+        #[arg(value_name = "DATETIME")]
+        #[arg(long = "at", value_name = "FORMAT")]
+        at: Option<String>,
     },
 
     /// Stop current time recording
-    Stop,
+    Stop {
+        /// Stop date and time of recording
+        #[arg(value_name = "DATETIME")]
+        #[arg(long = "at", value_name = "FORMAT")]
+        at: Option<String>,
+    },
 
     /// Show current time recording
     Status,

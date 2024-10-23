@@ -172,8 +172,8 @@ async fn main() {
             });
         }
 
-        cli::Commands::Start { tree_name } => {
-            forest::timetracking::start(tree_name)
+        cli::Commands::Start { tree_name, at } => {
+            forest::timetracking::start(tree_name, at)
                 .await
                 .unwrap_or_else(|e| {
                     eprintln!("start: {e}");
@@ -181,8 +181,8 @@ async fn main() {
                 });
         }
 
-        cli::Commands::Stop => {
-            forest::timetracking::stop().await.unwrap_or_else(|e| {
+        cli::Commands::Stop { at } => {
+            forest::timetracking::stop(at).await.unwrap_or_else(|e| {
                 eprintln!("stop: {e}");
                 process::exit(1);
             });

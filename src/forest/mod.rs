@@ -1,3 +1,4 @@
+mod ansi;
 mod dbutils;
 pub mod notetaking;
 pub mod task;

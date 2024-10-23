@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use super::ansi;
 use super::dbutils;
 use super::types;
 
@@ -79,7 +80,10 @@ pub async fn add(name: String, description: String, edit: bool) -> Result<(), Bo
         }
         Err(query_error) => panic!("Database query failed: {query_error}"),
     }
-    println!("Added tree '{}'", name);
+    println!(
+        "Added tree {}",
+        ansi::format(&name, ansi::ForestFormat::TreeName)
+    );
 
     // switch to new tree
     switch(&name).await?;
@@ -126,7 +130,10 @@ pub async fn remove(name: &String) -> Result<(), Box<dyn Error>> {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     }
 
-    println!("Removed tree '{name}'");
+    println!(
+        "Removed tree {}",
+        ansi::format(name, ansi::ForestFormat::TreeName)
+    );
 
     Ok(())
 }
@@ -187,7 +194,10 @@ pub async fn list(format: types::ListFormat, show_uid: bool) -> Result<(), Box<d
                     } else {
                         print!("  ");
                     }
-                    println!("{}", task.tree_name);
+                    println!(
+                        "{}",
+                        ansi::format(&task.tree_name, ansi::ForestFormat::TreeName)
+                    );
                 }
             }
         }
@@ -201,13 +211,19 @@ pub async fn list(format: types::ListFormat, show_uid: bool) -> Result<(), Box<d
                         print!("  ");
                     }
 
-                    println!("\x1b[1;38;5;0;48;5;2m{}\x1b[0m", task.tree_name);
+                    println!(
+                        "{}",
+                        ansi::format(&task.tree_name, ansi::ForestFormat::TreeName)
+                    );
 
                 // print first tasks
                 } else {
-                    print!("    \x1b[1mNext task:\x1b[0m {}", task.name);
+                    print!(
+                        "    Next task: {}",
+                        ansi::format(&task.name, ansi::ForestFormat::TaskName)
+                    );
                     if show_uid {
-                        print!(" ({})", task.id);
+                        print!(" ({})", ansi::format(&task.id, ansi::ForestFormat::Uid));
                     }
                     println!();
                     println!();
@@ -256,10 +272,15 @@ pub async fn show(name: &String) -> Result<(), Box<dyn Error>> {
         },
     };
 
+    println!(
+        "tree {}",
+        ansi::format(&record.name, ansi::ForestFormat::TreeName)
+    );
     println!();
-    println!("\x1b[1;38;5;0;48;5;2m{}\x1b[0m", record.name);
-    println!("{}", record.description);
-    println!();
+
+    for line in record.description.lines() {
+        println!("    {line}");
+    }
 
     Ok(())
 }
@@ -302,7 +323,11 @@ pub async fn rename(name: &String, new_name: String) -> Result<(), Box<dyn Error
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
-    println!("Renamed tree '{name}' to '{new_name}'");
+    println!(
+        "Renamed tree {} to {}",
+        ansi::format(name, ansi::ForestFormat::TreeName),
+        ansi::format(&new_name, ansi::ForestFormat::TreeName)
+    );
 
     Ok(())
 }
@@ -369,7 +394,10 @@ pub async fn edit(name: &String) -> Result<(), Box<dyn Error>> {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
-    println!("Edited description of tree '{name}'");
+    println!(
+        "Edited description of tree {}",
+        ansi::format(name, ansi::ForestFormat::TreeName)
+    );
 
     Ok(())
 }
@@ -414,7 +442,10 @@ pub async fn switch(name: &String) -> Result<(), Box<dyn Error>> {
         },
     };
 
-    println!("Switched to tree '{name}'");
+    println!(
+        "Switched to tree {}",
+        ansi::format(name, ansi::ForestFormat::TreeName)
+    );
 
     Ok(())
 }
