@@ -3,12 +3,16 @@ use std::error::Error;
 
 use super::ansi;
 use super::dbutils;
+use super::tree;
 use super::types;
 
 const DATE_FORMAT: &str = "%Y-%m-%d";
 const TIME_FORMAT: &str = "%H:%M";
 
-fn human_duration(delta: TimeDelta) -> String {
+/// Returns a human-friendly representation of WHEN was the given datetime compared to now
+fn when(datetime: DateTime<Local>) -> String {
+    let delta = Local::now() - datetime;
+
     if delta.num_weeks() > 1 {
         return format!("{} weeks ago", delta.num_weeks());
     } else if delta.num_days() > 6 {
@@ -27,6 +31,13 @@ fn human_duration(delta: TimeDelta) -> String {
     String::from("just now")
 }
 
+/// Parses a user datetime and returns the parse Datetime.
+/// If input user datetime is `None`, returns `Local::now()`.
+///
+/// Input format are "%Y-%m-%d %H:%M" "%H:%M".
+///
+/// # Errors
+/// Returns an error if the input string is ill-formed
 fn parse_user_datetime(
     user_datetime_str: &Option<String>,
 ) -> Result<DateTime<Local>, Box<dyn Error>> {
@@ -36,11 +47,18 @@ fn parse_user_datetime(
     datetime_format.push_str(TIME_FORMAT);
 
     let datetime: DateTime<Local> = match user_datetime_str {
+        // if user datetime provided, parse it
         Some(datetime) => {
+            // try to parse DATE AND TIME format "%Y-%m-%d %H:%M"
             let naive_datetime = match NaiveDateTime::parse_from_str(datetime, &datetime_format) {
                 Ok(naive_datetime) => naive_datetime,
+
+                // if failed to parse DATE AND TIME format "%Y-%m-%d %H:%M",
+                // try to parse only TIME format "%H:%M"
                 Err(_) => match NaiveTime::parse_from_str(datetime, TIME_FORMAT) {
                     Ok(naive_time) => Utc::now().date_naive().and_time(naive_time),
+
+                    // failed to parse both formats
                     Err(_) => {
                         return Err(format!(
                             "Illegal date format. Date format should be \"{}\" or \"{}\"",
@@ -50,8 +68,14 @@ fn parse_user_datetime(
                     }
                 },
             };
-            naive_datetime.and_local_timezone(Local).unwrap()
+
+            // fit the parsed date time to the local timezone
+            naive_datetime
+                .and_local_timezone(Local)
+                .single()
+                .expect("Timezone convertion should not fail. See https://docs.rs/chrono/latest/chrono/offset/type.MappedLocalTime.html#variant.None")
         }
+        // if no user datetime provided, return current time
         None => Local::now(),
     };
 
@@ -72,6 +96,7 @@ pub async fn start(
 
     let pool = dbutils::load_db().await;
 
+    // get tree name if one was provided, current tree name otherwise
     let tree_name = match tree_name {
         Some(name) => name,
         None => match dbutils::get_current_tree_name(&pool).await{
@@ -158,7 +183,7 @@ pub async fn start(
         )
     );
 
-    super::tree::switch(&tree_name).await?;
+    tree::switch(&tree_name).await?;
 
     Ok(())
 }
@@ -227,7 +252,6 @@ pub async fn stop(datetime: Option<String>) -> Result<(), Box<dyn Error>> {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
-    let now = Local::now();
     // in case multiple time recordings were started
     // print stopping message for each
     for frame in started_frames {
@@ -236,7 +260,7 @@ pub async fn stop(datetime: Option<String>) -> Result<(), Box<dyn Error>> {
         println!(
             "Stopped recording time on tree {}, started {} ({} {})",
             ansi::format(&frame.tree_name, ansi::ForestFormat::TreeName),
-            ansi::format(&human_duration(now - start_time), ansi::ForestFormat::Time),
+            ansi::format(&when(start_time), ansi::ForestFormat::Time),
             ansi::format(
                 &start_time.format("%Y-%m-%d").to_string(),
                 ansi::ForestFormat::Date
@@ -306,10 +330,7 @@ pub async fn status() -> Result<(), Box<dyn Error>> {
             println!(
                 "Recording time on tree {}, started {} ({} {})",
                 ansi::format(&frame.tree_name, ansi::ForestFormat::TreeName),
-                ansi::format(
-                    &human_duration(Local::now() - start_time),
-                    ansi::ForestFormat::Time
-                ),
+                ansi::format(&when(start_time), ansi::ForestFormat::Time),
                 ansi::format(
                     &start_time.format("%Y-%m-%d").to_string(),
                     ansi::ForestFormat::Date

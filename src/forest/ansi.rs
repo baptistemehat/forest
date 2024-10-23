@@ -1,5 +1,6 @@
 use clap::builder::styling::{AnsiColor, Color, Reset, Style};
 
+// Custom styles used to display forest elements (task, tree, date, note, etc.)
 const RESET: Reset = Reset;
 const TASK_NAME: Style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan)));
 const TREE_NAME: Style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Magenta)));
@@ -8,6 +9,7 @@ const DATE: Style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Blue)));
 const UID: Style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Yellow)));
 const BOX: Style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
 
+/// Format used to display forest data
 pub enum ForestFormat {
     TaskName,
     TreeName,
@@ -17,6 +19,7 @@ pub enum ForestFormat {
     Box,
 }
 
+/// Formats the input string with the given format
 pub fn format(s: &String, fmt: ForestFormat) -> String {
     match fmt {
         ForestFormat::TaskName => {
