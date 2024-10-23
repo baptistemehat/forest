@@ -27,7 +27,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 export CARGO_TARGET_DIR="${GIT_ROOT}/target"
 
 # check formatting
-(cd $TEMPDIR; cargo fmt --all)
+(cd $TEMPDIR; cargo fmt --all --check)
 
 # lint all packages
 # treat all (rustc) warnings as errors

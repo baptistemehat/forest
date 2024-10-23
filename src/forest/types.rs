@@ -1,4 +1,16 @@
+use clap;
 use nanoid::nanoid;
+
+/// Possible formatting for `list` commands
+#[derive(clap::ValueEnum, Clone, Default)]
+pub enum ListFormat {
+    /// only display tree names
+    #[default]
+    Short,
+
+    // display tree names, and next task
+    Long,
+}
 
 /// Unique Identifier
 pub type Uid = String;
