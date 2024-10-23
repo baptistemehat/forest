@@ -104,7 +104,8 @@ pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "Added a new note to tree {}",
+        "Added note {} to tree {}",
+        ansi::format(&new_note_uid, ansi::ForestFormat::Uid),
         ansi::format(&tree_name, ansi::ForestFormat::TreeName)
     );
 
