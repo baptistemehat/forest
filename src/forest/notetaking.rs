@@ -5,8 +5,8 @@ use std::error::Error;
 use std::fs::{self, File};
 use std::io::{self, BufRead};
 
+use super::ansi;
 use super::types;
-
 /// Create a new note linked to the current tree
 ///
 /// # Errors
@@ -103,7 +103,10 @@ pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
         },
     }
 
-    println!("Added a new note to tree '{tree_name}'");
+    println!(
+        "Added a new note to tree {}",
+        ansi::format(&tree_name, ansi::ForestFormat::TreeName)
+    );
 
     Ok(())
 }
@@ -152,7 +155,7 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
     let max_tree_name_length = records
         .iter()
         .max_by(|a, b| a.tree_name.len().cmp(&b.tree_name.len()))
-        .map(|a| a.tree_name.len())
+        .map(|a| ansi::format(&a.tree_name, ansi::ForestFormat::TreeName).len())
         .expect(
             "At this point in the function, the itterator should point to a non empty collection",
         );
@@ -160,17 +163,28 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
     // print each note
     for note in records {
         if show_uid {
-            print!("{}   ", note.id);
+            print!("{} ", ansi::format(&note.id, ansi::ForestFormat::Uid));
         }
 
         // print note date
-        let note_date: DateTime<Local> = DateTime::from_timestamp_millis(note.date).unwrap().into();
-        print!("{}   ", note_date.format("%Y-%m-%d %H:%M:%S"));
+        let note_datetime: DateTime<Local> =
+            DateTime::from_timestamp_millis(note.date).unwrap().into();
+        print!(
+            "{} {} ",
+            ansi::format(
+                &note_datetime.format("%Y-%m-%d").to_string(),
+                ansi::ForestFormat::Date
+            ),
+            ansi::format(
+                &note_datetime.format("%H:%M").to_string(),
+                ansi::ForestFormat::Time
+            ),
+        );
 
         // print tree_name with padding for alignment
         print!(
-            "{:width$}   ",
-            note.tree_name,
+            "{:width$} ",
+            ansi::format(&note.tree_name, ansi::ForestFormat::TreeName),
             width = &max_tree_name_length
         );
 
@@ -183,7 +197,7 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
         // try to get first line of file if any to print a "note preview"
         match reader.lines().next() {
             Some(line) => println!("{}", line.expect("Failed to read first line of note file")),
-            None => println!("\x1b[1mEmpty Note\x1b[0m"),
+            None => println!(),
         }
     }
 
@@ -230,7 +244,10 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     }
 
-    println!("Removed note {}", uid);
+    println!(
+        "Removed note {}",
+        ansi::format(uid, ansi::ForestFormat::Uid)
+    );
 
     Ok(())
 }
@@ -299,12 +316,26 @@ pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         .expect("At this point in the function, the note file should exist");
 
     let note_date: DateTime<Local> = DateTime::from_timestamp_millis(note.date).unwrap().into();
+    println!("note {}", ansi::format(uid, ansi::ForestFormat::Uid),);
     println!(
-        "\x1b[1mNote:\x1b[0m   {}   {}   ",
-        note.tree_name,
-        note_date.format("%Y-%m-%d %H:%M:%S")
+        "Date: {} {}",
+        ansi::format(
+            &note_date.format("%Y-%m-%d").to_string(),
+            ansi::ForestFormat::Date
+        ),
+        ansi::format(
+            &note_date.format("%H:%M").to_string(),
+            ansi::ForestFormat::Time
+        )
     );
-    println!("{note_content}");
+    println!(
+        "Tree: {}",
+        ansi::format(&note.tree_name, ansi::ForestFormat::TreeName),
+    );
+    println!();
+    for line in note_content.lines() {
+        println!("    {line}");
+    }
 
     Ok(())
 }

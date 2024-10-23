@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use super::ansi;
 use super::dbutils;
 use super::types;
 
@@ -156,8 +157,10 @@ pub async fn add(
     }
 
     println!(
-        "Added task '{}' ({}) to current tree '{}'",
-        &name, new_task_uid, current_tree_name
+        "Added task {} ({}) to tree {}",
+        ansi::format(&name, ansi::ForestFormat::TaskName),
+        ansi::format(&new_task_uid, ansi::ForestFormat::Uid),
+        ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
     );
 
     Ok(())
@@ -271,8 +274,10 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     };
 
     println!(
-        "Removed task '{}' ({}) from current tree '{}'",
-        task.name, uid, current_tree_name
+        "Removed task {} ({}) from tree {}",
+        ansi::format(&task.name, ansi::ForestFormat::TaskName),
+        ansi::format(uid, ansi::ForestFormat::Uid),
+        ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
     );
 
     Ok(())
@@ -344,7 +349,12 @@ pub async fn rename(uid: &types::Uid, name: String) -> Result<(), Box<dyn Error>
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
-    println!("Remaned task '{}' ({}) to '{}'", task.name, uid, name);
+    println!(
+        "Renamed task {} ({}) to {}",
+        ansi::format(&task.name, ansi::ForestFormat::TaskName),
+        ansi::format(uid, ansi::ForestFormat::Uid),
+        ansi::format(&name, ansi::ForestFormat::TaskName)
+    );
 
     Ok(())
 }
@@ -417,7 +427,11 @@ pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
-    println!("Edited description of task '{}' ({})", task.name, uid);
+    println!(
+        "Edited description of task {} ({})",
+        ansi::format(&task.name, ansi::ForestFormat::TaskName),
+        ansi::format(uid, ansi::ForestFormat::Uid),
+    );
 
     Ok(())
 }
@@ -458,7 +472,10 @@ pub async fn list(show_key: bool) -> Result<(), Box<dyn Error>> {
     let mut stack: Vec<i64> = Vec::new();
 
     // print tree name as a header
-    println!("\x1b[1;38;5;0;48;5;2m{}\x1b[0m", current_tree_name);
+    println!(
+        "{}",
+        ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
+    );
 
     let mut task_iter = task_vec.iter();
 
@@ -490,7 +507,10 @@ pub async fn list(show_key: bool) -> Result<(), Box<dyn Error>> {
                 if *child == parent - 1 {
                     print!("  ");
                 } else {
-                    print!("\x1b[38;5;8m│\x1b[0m ");
+                    print!(
+                        "{} ",
+                        ansi::format(&String::from("│"), ansi::ForestFormat::Box)
+                    );
                 }
             }
         }
@@ -498,13 +518,21 @@ pub async fn list(show_key: bool) -> Result<(), Box<dyn Error>> {
         // if current task is the youngest (ie. last) child of its parent
         // "stop" the vertical line here
         if task.right == (stack.last().unwrap() - 1) {
-            print!("\x1b[38;5;8m└╴\x1b[0m{}", task.name);
+            print!(
+                "{}{}",
+                ansi::format(&String::from("└╴"), ansi::ForestFormat::Box),
+                ansi::format(&task.name, ansi::ForestFormat::TaskName),
+            );
         } else {
-            print!("\x1b[38;5;8m├╴\x1b[0m{}", task.name);
+            print!(
+                "{}{}",
+                ansi::format(&String::from("├╴"), ansi::ForestFormat::Box),
+                ansi::format(&task.name, ansi::ForestFormat::TaskName),
+            );
         }
 
         if show_key {
-            print!(" ({})", task.id);
+            print!(" ({})", ansi::format(&task.id, ansi::ForestFormat::Uid));
         }
         println!();
 
@@ -560,8 +588,20 @@ pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         },
     };
 
-    println!("Task: '{}' ({})", task.name, uid);
-    println!("{}", task.description);
+    println!("task {}", ansi::format(uid, ansi::ForestFormat::Uid));
+    println!(
+        "Tree: {}",
+        ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
+    );
+    println!(
+        "Name: {}",
+        ansi::format(&task.name, ansi::ForestFormat::TaskName)
+    );
+    println!();
+
+    for line in task.description.lines() {
+        println!("    {line}");
+    }
 
     Ok(())
 }
@@ -834,7 +874,11 @@ pub async fn priority(uid: &types::Uid, priority: types::Priority) -> Result<(),
         };
     }
 
-    println!("Changed priority of '{}' ({})", moved_task.name, uid);
+    println!(
+        "Changed priority of task {} ({})",
+        ansi::format(&moved_task.name, ansi::ForestFormat::TaskName),
+        ansi::format(uid, ansi::ForestFormat::Uid),
+    );
 
     Ok(())
 }
