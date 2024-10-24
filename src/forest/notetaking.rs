@@ -14,7 +14,10 @@ use super::types;
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
+pub async fn add(
+    tree_name: Option<String>,
+    from_time_tracking: bool,
+) -> Result<(), Box<dyn Error>> {
     let new_note_uid = types::generate_uid();
 
     // create a new note on file system
@@ -75,12 +78,13 @@ pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     let task_id = task.id;
     let query_result = sqlx::query!(
         r#"
-        INSERT INTO note("id", "date", "task_id")
-        VALUES (?, ?, ?);
+        INSERT INTO note("id", "date", "task_id", "time_tracking")
+        VALUES (?, ?, ?, ?);
         "#,
         new_note_uid,
         date,
         task_id,
+        from_time_tracking
     )
     .execute(&mut *conn)
     .await;
@@ -119,7 +123,7 @@ pub async fn add(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
+pub async fn list(show_uid: bool, show_time_tracking: bool) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let mut conn = pool
@@ -132,7 +136,7 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
         r#"
         -- foreach note, get date, tree name and note id
 
-        SELECT tree_name, date, n.id
+        SELECT tree_name, date, n.id, n.time_tracking
         FROM note n INNER JOIN task t ON n.task_id = t.id
         ORDER BY date DESC;
         "#
@@ -163,6 +167,10 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
 
     // print each note
     for note in records {
+        if !show_time_tracking && note.time_tracking == 1 {
+            continue;
+        }
+
         if show_uid {
             print!("{} ", ansi::format(&note.id, ansi::ForestFormat::Uid));
         }
@@ -182,6 +190,13 @@ pub async fn list(show_uid: bool) -> Result<(), Box<dyn Error>> {
             ),
         );
 
+        if show_time_tracking {
+            if note.time_tracking == 1 {
+                print!("tt   ");
+            } else {
+                print!("user ");
+            }
+        }
         // print tree_name with padding for alignment
         print!(
             "{:width$} ",
@@ -267,6 +282,8 @@ pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     if let Err(e) = default_editor::edit_file(note_path) {
         panic!("Failed to open new note in default editor: {e}");
     }
+
+    println!("Edited note {}", ansi::format(uid, ansi::ForestFormat::Uid));
 
     Ok(())
 }

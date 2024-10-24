@@ -137,7 +137,7 @@ pub async fn start(
     };
 
     // stop any previous recording
-    let _ = stop(datetime).await;
+    let _ = stop(datetime, true).await;
 
     // insert a new time frame into the frame table
     let new_frame_id = types::generate_uid();
@@ -196,7 +196,7 @@ pub async fn start(
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn stop(datetime: Option<String>) -> Result<(), Box<dyn Error>> {
+pub async fn stop(datetime: Option<String>, create_note: bool) -> Result<(), Box<dyn Error>> {
     let stop_datetime = parse_user_datetime(&datetime)?;
 
     let pool = dbutils::load_db().await;
@@ -256,8 +256,10 @@ pub async fn stop(datetime: Option<String>) -> Result<(), Box<dyn Error>> {
     // in case multiple time recordings were started
     // print stopping message for each
     for frame in started_frames {
-        // create a new note to write what was done in this work session
-        notetaking::add(Some(frame.tree_name.clone())).await?;
+        if create_note {
+            // create a new note to write what was done in this work session
+            notetaking::add(Some(frame.tree_name.clone()), true).await?;
+        }
 
         let start_time: DateTime<Local> =
             DateTime::from_timestamp_millis(frame.start).unwrap().into();

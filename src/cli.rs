@@ -131,6 +131,10 @@ pub enum Commands {
         #[arg(value_name = "DATETIME")]
         #[arg(long = "at", value_name = "FORMAT")]
         at: Option<String>,
+
+        /// Do not create a new note
+        #[arg(short = 'n', long = "no-note")]
+        no_note: bool,
     },
 
     /// Show current time recording
@@ -214,9 +218,13 @@ pub enum NoteCommands {
     /// List all notes
     #[clap(alias = "ls")]
     List {
-        /// Show task uids
+        /// Show note uids
         #[arg(short = 'u', long = "show-uid")]
         show_uid: bool,
+
+        /// Show time tracking notes (hidden by default)
+        #[arg(short = 't', long = "show-tt")]
+        show_time_tracking: bool,
     },
 
     /// Create a new note associated to the current tree
