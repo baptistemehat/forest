@@ -257,7 +257,7 @@ pub async fn stop(datetime: Option<String>) -> Result<(), Box<dyn Error>> {
     // print stopping message for each
     for frame in started_frames {
         // create a new note to write what was done in this work session
-        notetaking::add(Some(frame.tree_name.clone())).await?;
+        notetaking::add(Some(frame.tree_name.clone()), true).await?;
 
         let start_time: DateTime<Local> =
             DateTime::from_timestamp_millis(frame.start).unwrap().into();

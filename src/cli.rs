@@ -214,9 +214,13 @@ pub enum NoteCommands {
     /// List all notes
     #[clap(alias = "ls")]
     List {
-        /// Show task uids
+        /// Show note uids
         #[arg(short = 'u', long = "show-uid")]
         show_uid: bool,
+
+        /// Show time tracking notes (hidden by default)
+        #[arg(short = 't', long = "show-tt")]
+        show_time_tracking: bool,
     },
 
     /// Create a new note associated to the current tree

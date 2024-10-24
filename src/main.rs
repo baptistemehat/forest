@@ -127,8 +127,11 @@ async fn main() {
         },
 
         cli::Commands::Note { command } => match command {
-            cli::NoteCommands::List { show_uid } => {
-                forest::notetaking::list(show_uid)
+            cli::NoteCommands::List {
+                show_uid,
+                show_time_tracking,
+            } => {
+                forest::notetaking::list(show_uid, show_time_tracking)
                     .await
                     .unwrap_or_else(|e| {
                         eprintln!("note list: {e}");
@@ -137,7 +140,7 @@ async fn main() {
             }
 
             cli::NoteCommands::Add { tree_name } => {
-                forest::notetaking::add(tree_name)
+                forest::notetaking::add(tree_name, false)
                     .await
                     .unwrap_or_else(|e| {
                         eprintln!("note add: {e}");
