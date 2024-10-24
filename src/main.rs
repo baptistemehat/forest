@@ -184,11 +184,15 @@ async fn main() {
                 });
         }
 
-        cli::Commands::Stop { at } => {
-            forest::timetracking::stop(at).await.unwrap_or_else(|e| {
-                eprintln!("stop: {e}");
-                process::exit(1);
-            });
+        cli::Commands::Stop { at, no_note } => {
+            // Note creation is enabled by default
+            let create_note = !no_note;
+            forest::timetracking::stop(at, create_note)
+                .await
+                .unwrap_or_else(|e| {
+                    eprintln!("stop: {e}");
+                    process::exit(1);
+                });
         }
         cli::Commands::Status => {
             forest::timetracking::status().await.unwrap_or_else(|e| {

@@ -131,6 +131,10 @@ pub enum Commands {
         #[arg(value_name = "DATETIME")]
         #[arg(long = "at", value_name = "FORMAT")]
         at: Option<String>,
+
+        /// Do not create a new note
+        #[arg(short = 'n', long = "no-note")]
+        no_note: bool,
     },
 
     /// Show current time recording
