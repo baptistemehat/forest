@@ -2,7 +2,70 @@ use std::error::Error;
 
 use super::ansi;
 use super::dbutils;
-use super::types;
+use super::types::{Priority, Uid};
+
+/// Finds a UID in task table that matches the provided partial uid
+///
+/// # Errors
+/// Returns an error if no uid is found or if more than one uid fits the partial uid
+///
+/// # Panic
+/// This function may panic if db operations fail
+async fn find_uid_from_partial(short_uid: &String) -> Result<Uid, Box<dyn Error>> {
+    let pool = dbutils::load_db().await;
+
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    // get all uids from this current tree, that match the provided short uid, except for the root
+    // task
+    let query_result = sqlx::query!(
+        r#"
+        SELECT id, name
+        FROM task
+        WHERE tree_name = ? AND "left" != 1 AND id LIKE ? || '%';
+        "#,
+        current_tree_name,
+        short_uid,
+    )
+    .fetch_all(&mut *conn)
+    .await;
+
+    match query_result {
+        // Database error
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+
+        // Query succeeded
+        Ok(mut records) => {
+            // if no task matching short uid was found
+            if records.is_empty() {
+                Err(format!("Task '{short_uid}' not found in tree '{current_tree_name}'").into())
+
+                // if more than one task matches the short uid
+            } else if records.len() > 1 {
+                let mut error_message = format!("At least two tasks match '{short_uid}...':\n");
+                for task in records {
+                    error_message.push_str(&format!("- {}: {}\n", task.id, task.name));
+                }
+                error_message
+                    .push_str("Please try to be more precise when refering to task uids\n");
+                Err(error_message.into())
+
+            // if the short uid only matched a single uid
+            } else {
+                let matching_record = records.pop().expect(
+                    "There should be exactly one record in the records vector at this point",
+                );
+
+                Ok(Uid::try_from(matching_record.id)?)
+            }
+        }
+    }
+}
 
 /// Adds a task to the current tree
 ///
@@ -13,19 +76,13 @@ use super::types;
 /// This function may panic if database operations fail
 pub async fn add(
     name: String,
-    parent_uid: Option<&types::Uid>,
+    parent_uid: Option<&String>,
     description: String,
     edit: bool,
 ) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
@@ -39,11 +96,13 @@ pub async fn add(
     };
 
     let parent_right = match parent_uid {
-        Some(uid) => {
+        Some(partial_uid) => {
+            let uid = find_uid_from_partial(partial_uid).await?;
+
             // get parent's "right" field
             let query_result = sqlx::query!(
                 r#"
-                SELECT "right"
+                SELECT "right", id, name
                 FROM task
                 WHERE tree_name = ? AND id = ?;
                 "#,
@@ -58,10 +117,9 @@ pub async fn add(
                 Ok(record) => record,
                 Err(query_error) => match query_error {
                     sqlx::Error::RowNotFound => {
-                        return Err(format!(
-                            "Parent task '{uid}' not found in tree '{current_tree_name}'"
+                        return Err(
+                            format!("Task '{uid}' not found in tree '{current_tree_name}'").into(),
                         )
-                        .into())
                     }
                     other_error => panic!("Database query failed: {other_error}"),
                 },
@@ -88,6 +146,15 @@ pub async fn add(
         }
     };
 
+    let new_task_uid = Uid::new();
+
+    // check that new uid's short version is not in the db
+    if find_uid_from_partial(&new_task_uid.short().to_string())
+        .await
+        .is_ok()
+    {
+        panic!("Birthday paradox hit");
+    }
     // update position of all tasks at the right of the parent
     let query_result = sqlx::query!(
         r#"
@@ -120,7 +187,6 @@ pub async fn add(
     };
 
     // insert the new task
-    let new_task_uid = types::generate_uid();
     let new_task_left = parent_right;
     let new_task_right = parent_right + 1;
     let query_result = sqlx::query!(
@@ -159,7 +225,7 @@ pub async fn add(
     println!(
         "Added task {} ({}) to tree {}",
         ansi::format(&name, ansi::ForestFormat::TaskName),
-        ansi::format(&new_task_uid, ansi::ForestFormat::Uid),
+        ansi::format(new_task_uid.short(), ansi::ForestFormat::Uid),
         ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
     );
 
@@ -173,21 +239,17 @@ pub async fn add(
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+pub async fn remove(partial_uid: &String) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
         .await
         .expect("Acquiring connection to database should succeed");
+
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get left and right values of the task we want to remove
     // this information is needed later to shift remaining tasks to fill the gap resulting from the
@@ -276,7 +338,7 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     println!(
         "Removed task {} ({}) from tree {}",
         ansi::format(&task.name, ansi::ForestFormat::TaskName),
-        ansi::format(uid, ansi::ForestFormat::Uid),
+        ansi::format(uid.short(), ansi::ForestFormat::Uid),
         ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
     );
 
@@ -284,21 +346,17 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
 }
 
 /// Renames a task from the current tree
-pub async fn rename(uid: &types::Uid, name: String) -> Result<(), Box<dyn Error>> {
+pub async fn rename(partial_uid: &String, name: String) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
         .await
         .expect("Acquiring connection to database should succeed");
+
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get the current name of the  task to rename from the task table
     // we need to retrieve this for output message
@@ -352,7 +410,7 @@ pub async fn rename(uid: &types::Uid, name: String) -> Result<(), Box<dyn Error>
     println!(
         "Renamed task {} ({}) to {}",
         ansi::format(&task.name, ansi::ForestFormat::TaskName),
-        ansi::format(uid, ansi::ForestFormat::Uid),
+        ansi::format(uid.short(), ansi::ForestFormat::Uid),
         ansi::format(&name, ansi::ForestFormat::TaskName)
     );
 
@@ -360,21 +418,17 @@ pub async fn rename(uid: &types::Uid, name: String) -> Result<(), Box<dyn Error>
 }
 
 /// Edits a task in the current tree
-pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+pub async fn edit(partial_uid: &String) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
         .await
         .expect("Acquiring connection to database should succeed");
+
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get name and description of the task to edit
     let query_result = sqlx::query!(
@@ -430,23 +484,17 @@ pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     println!(
         "Edited description of task {} ({})",
         ansi::format(&task.name, ansi::ForestFormat::TaskName),
-        ansi::format(uid, ansi::ForestFormat::Uid),
+        ansi::format(uid.short(), ansi::ForestFormat::Uid),
     );
 
     Ok(())
 }
 
 /// Lists all tasks in the current tree
-pub async fn list(show_key: bool) -> Result<(), Box<dyn Error>> {
+pub async fn list() -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
@@ -519,21 +567,24 @@ pub async fn list(show_key: bool) -> Result<(), Box<dyn Error>> {
         // "stop" the vertical line here
         if task.right == (stack.last().unwrap() - 1) {
             print!(
-                "{}{}",
+                "{}",
                 ansi::format(&String::from("└╴"), ansi::ForestFormat::Box),
-                ansi::format(&task.name, ansi::ForestFormat::TaskName),
             );
         } else {
             print!(
-                "{}{}",
+                "{}",
                 ansi::format(&String::from("├╴"), ansi::ForestFormat::Box),
-                ansi::format(&task.name, ansi::ForestFormat::TaskName),
             );
         }
+        print!(
+            "{} {}",
+            ansi::format(
+                Uid::try_from(task.id.clone()).unwrap().short(),
+                ansi::ForestFormat::Uid
+            ),
+            ansi::format(&task.name, ansi::ForestFormat::TaskName)
+        );
 
-        if show_key {
-            print!(" ({})", ansi::format(&task.id, ansi::ForestFormat::Uid));
-        }
         println!();
 
         // if task is a parent (ie. its width is higher than 1), then push its "right" value to the
@@ -548,21 +599,17 @@ pub async fn list(show_key: bool) -> Result<(), Box<dyn Error>> {
 }
 
 /// Shows the description of a task in the current tree
-pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+pub async fn show(partial_uid: &String) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
         .await
         .expect("Acquiring connection to database should succeed");
+
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get description of the desired task
     let query_result = sqlx::query!(
@@ -588,7 +635,10 @@ pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         },
     };
 
-    println!("task {}", ansi::format(uid, ansi::ForestFormat::Uid));
+    println!(
+        "task {}",
+        ansi::format(&uid.to_string(), ansi::ForestFormat::Uid)
+    );
     println!(
         "Tree: {}",
         ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
@@ -607,21 +657,17 @@ pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
 }
 
 /// Sets the priority of a task in the current tree
-pub async fn priority(uid: &types::Uid, priority: types::Priority) -> Result<(), Box<dyn Error>> {
+pub async fn priority(partial_uid: &String, priority: Priority) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
         .await
         .expect("Acquiring connection to database should succeed");
+
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get left and right boundaries of the task/subtree to move
     let query_result = sqlx::query!(
@@ -877,7 +923,7 @@ pub async fn priority(uid: &types::Uid, priority: types::Priority) -> Result<(),
     println!(
         "Changed priority of task {} ({})",
         ansi::format(&moved_task.name, ansi::ForestFormat::TaskName),
-        ansi::format(uid, ansi::ForestFormat::Uid),
+        ansi::format(uid.short(), ansi::ForestFormat::Uid),
     );
 
     Ok(())

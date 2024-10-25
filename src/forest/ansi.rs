@@ -20,7 +20,7 @@ pub enum ForestFormat {
 }
 
 /// Formats the input string with the given format
-pub fn format(s: &String, fmt: ForestFormat) -> String {
+pub fn format(s: &str, fmt: ForestFormat) -> String {
     match fmt {
         ForestFormat::TaskName => {
             format!("{TASK_NAME}{s}{RESET}")

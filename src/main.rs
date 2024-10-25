@@ -9,12 +9,10 @@ async fn main() {
     let cli_parser = cli::Cli::parse();
 
     match cli_parser.command {
-        cli::Commands::List { show_uid } => {
-            forest::task::list(show_uid).await.unwrap_or_else(|e| {
-                eprintln!("list: {e}");
-                process::exit(1);
-            })
-        }
+        cli::Commands::List => forest::task::list().await.unwrap_or_else(|e| {
+            eprintln!("list: {e}");
+            process::exit(1);
+        }),
 
         cli::Commands::Add {
             name,
@@ -73,8 +71,8 @@ async fn main() {
         }
 
         cli::Commands::Tree { command } => match command {
-            cli::TreeCommands::List { format, show_uid } => {
-                forest::tree::list(format.unwrap_or_default(), show_uid)
+            cli::TreeCommands::List { format } => {
+                forest::tree::list(format.unwrap_or_default())
                     .await
                     .unwrap_or_else(|e| {
                         eprintln!("list: {e}");
@@ -127,11 +125,8 @@ async fn main() {
         },
 
         cli::Commands::Note { command } => match command {
-            cli::NoteCommands::List {
-                show_uid,
-                show_time_tracking,
-            } => {
-                forest::notetaking::list(show_uid, show_time_tracking)
+            cli::NoteCommands::List { show_time_tracking } => {
+                forest::notetaking::list(show_time_tracking)
                     .await
                     .unwrap_or_else(|e| {
                         eprintln!("note list: {e}");

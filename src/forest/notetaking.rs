@@ -6,7 +6,67 @@ use std::fs::{self, File};
 use std::io::{self, BufRead};
 
 use super::ansi;
-use super::types;
+use super::types::Uid;
+
+/// Finds a UID in note table that matches the provided partial uid
+///
+/// # Errors
+/// Returns an error if no uid is found or if more than one uid fits the partial uid
+///
+/// # Panic
+/// This function may panic if db operations fail
+async fn find_uid_from_partial(partial_uid: &String) -> Result<Uid, Box<dyn Error>> {
+    let pool = dbutils::load_db().await;
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    // get all uids from this current tree, that match the provided short uid
+    let query_result = sqlx::query!(
+        r#"
+        SELECT id
+        FROM note
+        WHERE id LIKE ? || '%';
+        "#,
+        partial_uid,
+    )
+    .fetch_all(&mut *conn)
+    .await;
+
+    match query_result {
+        // Database error
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+
+        // Query succeeded
+        Ok(mut records) => {
+            // if no task matching short uid was found
+            if records.is_empty() {
+                Err(format!("Note '{partial_uid}' not found").into())
+
+                // if more than one task matches the short uid
+            } else if records.len() > 1 {
+                let mut error_message = format!("At least two notes match '{partial_uid}...':\n");
+                for note in records {
+                    error_message.push_str(&format!("- {}\n", note.id));
+                }
+                error_message
+                    .push_str("Please try to be more precise when refering to note uids\n");
+                Err(error_message.into())
+
+            // if the short uid only matched a single uid
+            } else {
+                let matching_record = records.pop().expect(
+                    "There should be exactly one record in the records vector at this point",
+                );
+
+                Ok(Uid::try_from(matching_record.id)?)
+            }
+        }
+    }
+}
+
 /// Create a new note linked to the current tree
 ///
 /// # Errors
@@ -18,7 +78,15 @@ pub async fn add(
     tree_name: Option<String>,
     from_time_tracking: bool,
 ) -> Result<(), Box<dyn Error>> {
-    let new_note_uid = types::generate_uid();
+    let new_note_uid = Uid::new();
+
+    // check that new uid's short version is not in the db
+    if find_uid_from_partial(&new_note_uid.short().to_string())
+        .await
+        .is_ok()
+    {
+        panic!("Birthday paradox hit");
+    }
 
     // create a new note on file system
     let new_note_path = match dbutils::get_note_path(&new_note_uid) {
@@ -36,13 +104,7 @@ pub async fn add(
 
     let tree_name = match tree_name {
         Some(name) => name,
-        None => match dbutils::get_current_tree_name(&pool).await{
-            Some(current_tree_name) => current_tree_name,
-            None => return Err(
-                "no current tree found. it seems like your forest is empty.\nconsider adding a tree."
-                .into(),
-            ),
-        },
+        None => dbutils::get_current_tree_name(&pool).await?,
     };
 
     let mut conn = pool
@@ -73,8 +135,7 @@ pub async fn add(
     };
 
     // insert new note into database
-    let now = Local::now();
-    let date = now.timestamp_millis();
+    let date = Local::now().timestamp_millis();
     let task_id = task.id;
     let query_result = sqlx::query!(
         r#"
@@ -109,7 +170,7 @@ pub async fn add(
 
     println!(
         "Added note {} to tree {}",
-        ansi::format(&new_note_uid, ansi::ForestFormat::Uid),
+        ansi::format(new_note_uid.short(), ansi::ForestFormat::Uid),
         ansi::format(&tree_name, ansi::ForestFormat::TreeName)
     );
 
@@ -123,7 +184,7 @@ pub async fn add(
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn list(show_uid: bool, show_time_tracking: bool) -> Result<(), Box<dyn Error>> {
+pub async fn list(show_time_tracking: bool) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let mut conn = pool
@@ -171,9 +232,12 @@ pub async fn list(show_uid: bool, show_time_tracking: bool) -> Result<(), Box<dy
             continue;
         }
 
-        if show_uid {
-            print!("{} ", ansi::format(&note.id, ansi::ForestFormat::Uid));
-        }
+        let note_uid = Uid::try_from(note.id).unwrap();
+
+        print!(
+            "{} ",
+            ansi::format(note_uid.short(), ansi::ForestFormat::Uid)
+        );
 
         // print note date
         let note_datetime: DateTime<Local> =
@@ -205,7 +269,7 @@ pub async fn list(show_uid: bool, show_time_tracking: bool) -> Result<(), Box<dy
         );
 
         // try to open note file to display its first line
-        let note_file_path = dbutils::get_note_path(&note.id)
+        let note_file_path = dbutils::get_note_path(&note_uid)
             .expect("A note file should be associated with each note in database");
         let note_file = File::open(note_file_path).expect("Path to the note file should exist");
         let reader = io::BufReader::new(note_file);
@@ -227,7 +291,7 @@ pub async fn list(show_uid: bool, show_time_tracking: bool) -> Result<(), Box<dy
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+pub async fn remove(partial_uid: &String) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let mut conn = pool
@@ -235,8 +299,10 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
+    let uid = find_uid_from_partial(partial_uid).await?;
+
     // remove note from file system
-    let note_file_path = dbutils::get_note_path(uid)
+    let note_file_path = dbutils::get_note_path(&uid)
         .expect("A note file should be associated with each note in database");
     fs::remove_file(note_file_path).expect("Failed to remove note file from filesystem");
 
@@ -262,7 +328,7 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
 
     println!(
         "Removed note {}",
-        ansi::format(uid, ansi::ForestFormat::Uid)
+        ansi::format(uid.short(), ansi::ForestFormat::Uid)
     );
 
     Ok(())
@@ -272,8 +338,40 @@ pub async fn remove(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
 ///
 /// # Errors
 /// Returns an error if the note does not exist
-pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
-    let note_path = match dbutils::get_note_path(uid) {
+pub async fn edit(partial_uid: &String) -> Result<(), Box<dyn Error>> {
+    let pool = dbutils::load_db().await;
+
+    let mut conn = pool
+        .acquire()
+        .await
+        .expect("Acquiring connection to database should succeed");
+
+    let uid = find_uid_from_partial(partial_uid).await?;
+
+    // get tree name and date of the note
+    let query_result = sqlx::query!(
+        r#"
+        -- get tree name and date of the note
+
+        SELECT n.id
+        FROM note n INNER JOIN task t ON n.task_id = t.id
+        WHERE n.id = ?
+        ORDER BY date DESC;
+        "#,
+        uid
+    )
+    .fetch_one(&mut *conn)
+    .await;
+
+    // error handling
+    if let Err(query_error) = query_result {
+        match &query_error {
+            sqlx::Error::RowNotFound => return Err(format!("Note '{uid}' not found").into()),
+            _ => panic!("Database query failed: {query_error}"),
+        }
+    };
+
+    let note_path = match dbutils::get_note_path(&uid) {
         Some(path) => path,
         None => return Err(format!("Could not find note {uid}").into()),
     };
@@ -283,7 +381,10 @@ pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         panic!("Failed to open new note in default editor: {e}");
     }
 
-    println!("Edited note {}", ansi::format(uid, ansi::ForestFormat::Uid));
+    println!(
+        "Edited note {}",
+        ansi::format(uid.short(), ansi::ForestFormat::Uid)
+    );
 
     Ok(())
 }
@@ -292,7 +393,7 @@ pub async fn edit(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
 ///
 /// # Errors
 /// Returns an error if the note does not exist
-pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
+pub async fn show(partial_uid: &String) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let mut conn = pool
@@ -300,6 +401,7 @@ pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
+    let uid = find_uid_from_partial(partial_uid).await?;
     // get tree name and date of the note
     let query_result = sqlx::query!(
         r#"
@@ -325,7 +427,7 @@ pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
     };
 
     // get note path
-    let note_path = match dbutils::get_note_path(uid) {
+    let note_path = match dbutils::get_note_path(&uid) {
         Some(path) => path,
         None => return Err(format!("Could not find note {uid}").into()),
     };
@@ -334,7 +436,10 @@ pub async fn show(uid: &types::Uid) -> Result<(), Box<dyn Error>> {
         .expect("At this point in the function, the note file should exist");
 
     let note_date: DateTime<Local> = DateTime::from_timestamp_millis(note.date).unwrap().into();
-    println!("note {}", ansi::format(uid, ansi::ForestFormat::Uid),);
+    println!(
+        "note {}",
+        ansi::format(&uid.to_string(), ansi::ForestFormat::Uid),
+    );
     println!(
         "Date: {} {}",
         ansi::format(
