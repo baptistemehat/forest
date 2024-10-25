@@ -59,9 +59,10 @@ pub async fn load_db() -> sqlx::Pool<sqlx::Sqlite> {
     pool
 }
 
-/// Returns the name of the current tree stored in db, if it exists. Otherwise returns the name of
-/// another tree from the database.
-/// Returns `None` if no current tree is found, ie. if the forest is empty.
+/// Returns the name of the current tree stored in db.
+///
+/// # Error
+/// Returns an error if there is no current tree (ie. the forest is empty)
 ///
 /// # Panics
 /// This function may panic if connection to db fails

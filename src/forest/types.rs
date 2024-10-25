@@ -1,5 +1,6 @@
 use clap;
 use nanoid::nanoid;
+use std::char;
 use std::fmt;
 
 /// Possible formatting for `list` commands
@@ -19,13 +20,17 @@ pub enum ListFormat {
 pub struct Uid(String);
 
 const UID_LENGTH: usize = 32;
+const SHORT_UID_LENGTH: usize = 7;
 
 impl Uid {
+    /// Constructs a new Unique identifier
     pub fn new() -> Self {
         Uid(nanoid!(UID_LENGTH, &UID_ALPHABET))
     }
+
+    /// Returns the first characters of the UID
     pub fn short(&self) -> &str {
-        &self.0[0..7]
+        &self.0[0..SHORT_UID_LENGTH]
     }
 }
 
@@ -38,9 +43,19 @@ impl fmt::Display for Uid {
 impl TryFrom<String> for Uid {
     type Error = &'static str;
 
+    /// Tries to construct a Uid from a String
+    ///
+    /// # Errors
+    /// Returns an error if the length of the provided String if not the length of a Uid.
+    /// Retruns an error if the provided String contains non-hex characters
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.len() != UID_LENGTH {
-            Err("Uid should be ")
+            Err("Length of provided String should be the same length as Uids")
+        } else if !value
+            .chars()
+            .all(|c| c.is_ascii_hexdigit() && c.is_lowercase())
+        {
+            Err("Provided string should only contain lowercase hex characters")
         } else {
             Ok(Self(value))
         }
@@ -70,5 +85,13 @@ pub fn task_name_parser(task_name: &str) -> Result<String, String> {
 
 /// Parses a uid
 pub fn uid_parser(uid: &str) -> Result<String, String> {
-    Ok(uid.to_string())
+    // uid should contain only hexadecimal characters
+    if uid
+        .chars()
+        .all(|c| c.is_ascii_hexdigit() && c.is_lowercase())
+    {
+        Ok(uid.to_string())
+    } else {
+        Err(format!("'{uid}' is not a valid Uid. Uids can only contain lowercase hexadecimal characters (0-9a-z)"))
+    }
 }

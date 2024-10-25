@@ -8,7 +8,14 @@ use std::io::{self, BufRead};
 use super::ansi;
 use super::types::Uid;
 
-async fn find_uid(partial_uid: &String) -> Result<Uid, Box<dyn Error>> {
+/// Finds a UID in note table that matches the provided partial uid
+///
+/// # Errors
+/// Returns an error if no uid is found or if more than one uid fits the partial uid
+///
+/// # Panic
+/// This function may panic if db operations fail
+async fn find_uid_from_partial(partial_uid: &String) -> Result<Uid, Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let mut conn = pool
@@ -74,7 +81,10 @@ pub async fn add(
     let new_note_uid = Uid::new();
 
     // check that new uid's short version is not in the db
-    if find_uid(&new_note_uid.short().to_string()).await.is_ok() {
+    if find_uid_from_partial(&new_note_uid.short().to_string())
+        .await
+        .is_ok()
+    {
         panic!("Birthday paradox hit");
     }
 
@@ -289,7 +299,7 @@ pub async fn remove(partial_uid: &String) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // remove note from file system
     let note_file_path = dbutils::get_note_path(&uid)
@@ -336,7 +346,7 @@ pub async fn edit(partial_uid: &String) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get tree name and date of the note
     let query_result = sqlx::query!(
@@ -391,7 +401,7 @@ pub async fn show(partial_uid: &String) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
     // get tree name and date of the note
     let query_result = sqlx::query!(
         r#"

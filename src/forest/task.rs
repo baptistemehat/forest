@@ -4,7 +4,14 @@ use super::ansi;
 use super::dbutils;
 use super::types::{Priority, Uid};
 
-async fn find_uid(short_uid: &String) -> Result<Uid, Box<dyn Error>> {
+/// Finds a UID in task table that matches the provided partial uid
+///
+/// # Errors
+/// Returns an error if no uid is found or if more than one uid fits the partial uid
+///
+/// # Panic
+/// This function may panic if db operations fail
+async fn find_uid_from_partial(short_uid: &String) -> Result<Uid, Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
@@ -90,7 +97,7 @@ pub async fn add(
 
     let parent_right = match parent_uid {
         Some(partial_uid) => {
-            let uid = find_uid(partial_uid).await?;
+            let uid = find_uid_from_partial(partial_uid).await?;
 
             // get parent's "right" field
             let query_result = sqlx::query!(
@@ -142,7 +149,10 @@ pub async fn add(
     let new_task_uid = Uid::new();
 
     // check that new uid's short version is not in the db
-    if find_uid(&new_task_uid.short().to_string()).await.is_ok() {
+    if find_uid_from_partial(&new_task_uid.short().to_string())
+        .await
+        .is_ok()
+    {
         panic!("Birthday paradox hit");
     }
     // update position of all tasks at the right of the parent
@@ -239,10 +249,10 @@ pub async fn remove(partial_uid: &String) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get left and right values of the task we want to remove
-    // this information is neede later to shift remaining tasks to fill the gap resulting from the
+    // this information is needed later to shift remaining tasks to fill the gap resulting from the
     // removal
     let query_result = sqlx::query!(
         r#"
@@ -346,7 +356,7 @@ pub async fn rename(partial_uid: &String, name: String) -> Result<(), Box<dyn Er
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get the current name of the  task to rename from the task table
     // we need to retrieve this for output message
@@ -354,7 +364,7 @@ pub async fn rename(partial_uid: &String, name: String) -> Result<(), Box<dyn Er
         r#"
         SELECT name 
         FROM task
-        WHERE tree_name = ? AND id LIKE ? || '%';
+        WHERE tree_name = ? AND id = ?;
         "#,
         current_tree_name,
         uid,
@@ -378,7 +388,7 @@ pub async fn rename(partial_uid: &String, name: String) -> Result<(), Box<dyn Er
         r#"
         UPDATE task
         SET name = ?
-        WHERE tree_name = ? AND id LIKE ? || '%';
+        WHERE tree_name = ? AND id = ?;
         "#,
         name,
         current_tree_name,
@@ -418,14 +428,14 @@ pub async fn edit(partial_uid: &String) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get name and description of the task to edit
     let query_result = sqlx::query!(
         r#"
         SELECT name, description
         FROM task
-        WHERE tree_name = ? AND id LIKE ? || '%';
+        WHERE tree_name = ? AND id = ?;
         "#,
         current_tree_name,
         uid,
@@ -452,7 +462,7 @@ pub async fn edit(partial_uid: &String) -> Result<(), Box<dyn Error>> {
         r#"
         UPDATE task
         SET description = ?
-        WHERE tree_name = ? AND id LIKE ? || '%';
+        WHERE tree_name = ? AND id = ?;
         "#,
         description,
         current_tree_name,
@@ -599,14 +609,14 @@ pub async fn show(partial_uid: &String) -> Result<(), Box<dyn Error>> {
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get description of the desired task
     let query_result = sqlx::query!(
         r#"
         SELECT name, description
         FROM task
-        WHERE tree_name = ? AND id LIKE ? || '%';
+        WHERE tree_name = ? AND id = ?;
         "#,
         current_tree_name,
         uid,
@@ -657,7 +667,7 @@ pub async fn priority(partial_uid: &String, priority: Priority) -> Result<(), Bo
         .await
         .expect("Acquiring connection to database should succeed");
 
-    let uid = find_uid(partial_uid).await?;
+    let uid = find_uid_from_partial(partial_uid).await?;
 
     // get left and right boundaries of the task/subtree to move
     let query_result = sqlx::query!(
