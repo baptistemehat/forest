@@ -5,7 +5,7 @@ use super::ansi;
 use super::dbutils;
 use super::notetaking;
 use super::tree;
-use super::types;
+use super::types::Uid;
 
 const DATE_FORMAT: &str = "%Y-%m-%d";
 const TIME_FORMAT: &str = "%H:%M";
@@ -100,13 +100,7 @@ pub async fn start(
     // get tree name if one was provided, current tree name otherwise
     let tree_name = match tree_name {
         Some(name) => name,
-        None => match dbutils::get_current_tree_name(&pool).await{
-            Some(current_tree_name) => current_tree_name,
-            None => return Err(
-                "no current tree found. it seems like your forest is empty.\nconsider adding a tree."
-                .into(),
-            ),
-        },
+        None => dbutils::get_current_tree_name(&pool).await?,
     };
 
     let mut conn = pool
@@ -140,7 +134,7 @@ pub async fn start(
     let _ = stop(datetime, true).await;
 
     // insert a new time frame into the frame table
-    let new_frame_id = types::generate_uid();
+    let new_frame_uid = Uid::new();
     let start_time = start_datetime.timestamp_millis();
     let end_time: Option<i32> = None;
     let root_task_id = task.id;
@@ -149,7 +143,7 @@ pub async fn start(
         INSERT INTO frame("id", "start", "end", "task_id")
         VALUES(?, ?, ?, ?);
         "#,
-        new_frame_id,
+        new_frame_uid,
         start_time,
         end_time,
         root_task_id,
@@ -291,13 +285,7 @@ pub async fn stop(datetime: Option<String>, create_note: bool) -> Result<(), Box
 pub async fn status() -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()

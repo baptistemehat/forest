@@ -14,12 +14,7 @@ pub struct Cli {
 pub enum Commands {
     /// List tasks in the current tree
     #[clap(alias = "ls")]
-    List {
-        /// Show task uids
-        #[arg(short = 'u', long = "show-uid")]
-        show_uid: bool,
-    },
-
+    List,
     /// Add a new task to the current tree
     Add {
         /// Name of the new task
@@ -30,7 +25,7 @@ pub enum Commands {
         /// Uid of parent task. By default, adds the task to the tree root.
         #[arg(short = 'p', long = "parent", value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        parent_uid: Option<types::Uid>,
+        parent_uid: Option<String>,
 
         /// Description of the new task
         #[arg(short = 'd', long = "description", value_name = "description")]
@@ -47,7 +42,7 @@ pub enum Commands {
         /// Uid of the task
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
     },
 
     /// Rename a task in the current tree
@@ -55,7 +50,7 @@ pub enum Commands {
         /// Uid of the task
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
 
         /// New name for the task
         #[arg(value_name = "NEW_NAME")]
@@ -68,7 +63,7 @@ pub enum Commands {
         /// Uid of the task
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
     },
 
     /// Edit description of a task in the current tree
@@ -76,7 +71,7 @@ pub enum Commands {
         /// Uid of the task
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
     },
 
     /// Set priority of a task in the current tree
@@ -84,7 +79,7 @@ pub enum Commands {
         /// Uid of the task
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
 
         /// Uid of the task
         #[arg(value_name = "PRIORITY")]
@@ -152,10 +147,6 @@ pub enum TreeCommands {
         /// Formatting options
         #[arg(short = 'f', long = "format", value_name = "FORMAT")]
         format: Option<types::ListFormat>,
-
-        /// Show task uids
-        #[arg(short = 'u', long = "show-uid")]
-        show_uid: bool,
     },
 
     /// Add a new tree
@@ -218,10 +209,6 @@ pub enum NoteCommands {
     /// List all notes
     #[clap(alias = "ls")]
     List {
-        /// Show note uids
-        #[arg(short = 'u', long = "show-uid")]
-        show_uid: bool,
-
         /// Show time tracking notes (hidden by default)
         #[arg(short = 't', long = "show-tt")]
         show_time_tracking: bool,
@@ -241,7 +228,7 @@ pub enum NoteCommands {
         /// Uid of the note
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
     },
 
     /// Show content of a note
@@ -249,7 +236,7 @@ pub enum NoteCommands {
         /// Uid of the note
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
     },
 
     /// Edit a note
@@ -257,7 +244,7 @@ pub enum NoteCommands {
         /// Uid of the note
         #[arg(value_name = "UID")]
         #[arg(value_parser = types::uid_parser)]
-        uid: types::Uid,
+        uid: String,
     },
 }
 

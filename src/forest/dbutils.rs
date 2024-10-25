@@ -1,4 +1,5 @@
 use super::types;
+use std::error::Error;
 use std::path::PathBuf;
 
 /// Name of config directory for the application
@@ -64,7 +65,10 @@ pub async fn load_db() -> sqlx::Pool<sqlx::Sqlite> {
 ///
 /// # Panics
 /// This function may panic if connection to db fails
-pub async fn get_current_tree_name(pool: &sqlx::sqlite::SqlitePool) -> Option<String> {
+pub async fn get_current_tree_name(
+    pool: &sqlx::sqlite::SqlitePool,
+) -> Result<String, Box<dyn Error>> {
+    // panic!("This should return an error ?");
     let mut conn = pool
         .acquire()
         .await
@@ -91,11 +95,21 @@ pub async fn get_current_tree_name(pool: &sqlx::sqlite::SqlitePool) -> Option<St
     // match whether a line was returned or not
     match record_optional {
         // no line was returned from the query
-        None => None,
+        None => Err(
+            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
+                .into(),
+        ),
+
         // a line was returned, ie. a tree name
         // record.current_tree is itself an option since its value in db can be null
         // since the column type in db does not prevent it to be null
-        Some(record) => record.current_tree,
+        Some(record) => match record.current_tree {
+            None => Err(
+                "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
+                .into(),
+            ),
+            Some(tree_name) => Ok(tree_name),
+        },
     }
 }
 

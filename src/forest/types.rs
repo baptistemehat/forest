@@ -1,5 +1,6 @@
 use clap;
 use nanoid::nanoid;
+use std::fmt;
 
 /// Possible formatting for `list` commands
 #[derive(clap::ValueEnum, Clone, Default)]
@@ -13,17 +14,43 @@ pub enum ListFormat {
 }
 
 /// Unique Identifier
-pub type Uid = String;
+#[derive(sqlx::Type, Clone)]
+#[sqlx(transparent)]
+pub struct Uid(String);
+
+const UID_LENGTH: usize = 32;
+
+impl Uid {
+    pub fn new() -> Self {
+        Uid(nanoid!(UID_LENGTH, &UID_ALPHABET))
+    }
+    pub fn short(&self) -> &str {
+        &self.0[0..7]
+    }
+}
+
+impl fmt::Display for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl TryFrom<String> for Uid {
+    type Error = &'static str;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if value.len() != UID_LENGTH {
+            Err("Uid should be ")
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
 
 /// UID alphabet
 pub const UID_ALPHABET: [char; 16] = [
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
 ];
-
-/// Returns a new uid
-pub fn generate_uid() -> Uid {
-    nanoid!(32, &UID_ALPHABET)
-}
 
 /// Priority of tasks.
 /// High priority is expressed with low integers:
@@ -42,6 +69,6 @@ pub fn task_name_parser(task_name: &str) -> Result<String, String> {
 }
 
 /// Parses a uid
-pub fn uid_parser(uid: &str) -> Result<Uid, String> {
+pub fn uid_parser(uid: &str) -> Result<String, String> {
     Ok(uid.to_string())
 }
