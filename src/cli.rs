@@ -12,6 +12,66 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Perform operations on tasks
+    Task {
+        #[command(subcommand)]
+        command: TaskCommands,
+    },
+
+    /// Perform operations on trees
+    Tree {
+        #[command(subcommand)]
+        command: TreeCommands,
+    },
+
+    /// Perform operations on notes
+    Note {
+        #[command(subcommand)]
+        command: NoteCommands,
+    },
+
+    /// Switch to another tree
+    Switch {
+        /// Name of the tree to switch to
+        #[arg(value_name = "NAME")]
+        #[arg(value_parser = types::tree_name_parser)]
+        name: String,
+    },
+
+    /// Start recording time
+    Start {
+        /// Name of tree for which to record time
+        #[arg(value_name = "TREE")]
+        #[arg(value_parser = types::tree_name_parser)]
+        tree_name: Option<String>,
+
+        /// Start date and time of recording
+        #[arg(value_name = "DATETIME")]
+        #[arg(long = "at", value_name = "FORMAT")]
+        at: Option<String>,
+    },
+
+    /// Stop current time recording
+    Stop {
+        /// Stop date and time of recording
+        #[arg(value_name = "DATETIME")]
+        #[arg(long = "at", value_name = "FORMAT")]
+        at: Option<String>,
+
+        /// Do not create a new note
+        #[arg(short = 'n', long = "no-note")]
+        no_note: bool,
+    },
+
+    /// Show current time recording
+    Status,
+
+    /// Reports time spent on each tree
+    Report,
+}
+
+#[derive(Subcommand)]
+pub enum TaskCommands {
     /// List tasks in the current tree
     #[clap(alias = "ls")]
     List,
@@ -86,57 +146,6 @@ pub enum Commands {
         #[arg(value_parser = value_parser!(types::Priority))]
         priority: types::Priority,
     },
-
-    /// Perform operations on trees
-    Tree {
-        #[command(subcommand)]
-        command: TreeCommands,
-    },
-
-    /// Perform operations on notes
-    Note {
-        #[command(subcommand)]
-        command: NoteCommands,
-    },
-
-    /// Switch to another tree
-    Switch {
-        /// Name of the tree to switch to
-        #[arg(value_name = "NAME")]
-        #[arg(value_parser = types::tree_name_parser)]
-        name: String,
-    },
-
-    /// Start recording time
-    Start {
-        /// Name of tree for which to record time
-        #[arg(value_name = "TREE")]
-        #[arg(value_parser = types::tree_name_parser)]
-        tree_name: Option<String>,
-
-        /// Start date and time of recording
-        #[arg(value_name = "DATETIME")]
-        #[arg(long = "at", value_name = "FORMAT")]
-        at: Option<String>,
-    },
-
-    /// Stop current time recording
-    Stop {
-        /// Stop date and time of recording
-        #[arg(value_name = "DATETIME")]
-        #[arg(long = "at", value_name = "FORMAT")]
-        at: Option<String>,
-
-        /// Do not create a new note
-        #[arg(short = 'n', long = "no-note")]
-        no_note: bool,
-    },
-
-    /// Show current time recording
-    Status,
-
-    /// Reports time spent on each tree
-    Report,
 }
 
 #[derive(Subcommand)]
