@@ -51,13 +51,10 @@ impl TryFrom<String> for Uid {
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.len() != UID_LENGTH {
             Err("Length of provided String should be the same length as Uids")
-        } else if !value
-            .chars()
-            .all(|c| c.is_ascii_hexdigit() && c.is_lowercase())
-        {
-            Err("Provided string should only contain lowercase hex characters")
+        } else if !value.chars().all(|c| c.is_ascii_hexdigit()) {
+            Err("Provided string should only contain hex characters")
         } else {
-            Ok(Self(value))
+            Ok(Self(value.to_lowercase()))
         }
     }
 }
@@ -86,12 +83,11 @@ pub fn task_name_parser(task_name: &str) -> Result<String, String> {
 /// Parses a uid
 pub fn uid_parser(uid: &str) -> Result<String, String> {
     // uid should contain only hexadecimal characters
-    if uid
-        .chars()
-        .all(|c| c.is_ascii_hexdigit() && c.is_lowercase())
-    {
+    if uid.chars().all(|c| c.is_ascii_hexdigit()) {
         Ok(uid.to_string())
     } else {
-        Err(format!("'{uid}' is not a valid Uid. Uids can only contain lowercase hexadecimal characters (0-9a-z)"))
+        Err(format!(
+            "'{uid}' is not a valid Uid. Uids can only contain hexadecimal characters (0-9a-z)"
+        ))
     }
 }
