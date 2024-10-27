@@ -9,67 +9,68 @@ async fn main() {
     let cli_parser = cli::Cli::parse();
 
     match cli_parser.command {
-        cli::Commands::List => forest::task::list().await.unwrap_or_else(|e| {
-            eprintln!("list: {e}");
-            process::exit(1);
-        }),
-
-        cli::Commands::Add {
-            name,
-            parent_uid,
-            description,
-            edit,
-        } => forest::task::add(
-            name,
-            parent_uid.as_ref(),
-            description.unwrap_or_default(),
-            edit,
-        )
-        .await
-        .unwrap_or_else(|e| {
-            eprintln!("add: {e}");
-            process::exit(1);
-        }),
-
-        cli::Commands::Remove { uid } => {
-            forest::task::remove(&uid).await.unwrap_or_else(|e| {
-                eprintln!("remove: {e}");
+        cli::Commands::Task { command } => match command {
+            cli::TaskCommands::List => forest::task::list().await.unwrap_or_else(|e| {
+                eprintln!("list: {e}");
                 process::exit(1);
-            });
-        }
+            }),
 
-        cli::Commands::Rename { uid, new_name } => {
-            forest::task::rename(&uid, new_name)
-                .await
-                .unwrap_or_else(|e| {
-                    eprintln!("rename: {e}");
+            cli::TaskCommands::Add {
+                name,
+                parent_uid,
+                description,
+                edit,
+            } => forest::task::add(
+                name,
+                parent_uid.as_ref(),
+                description.unwrap_or_default(),
+                edit,
+            )
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("add: {e}");
+                process::exit(1);
+            }),
+
+            cli::TaskCommands::Remove { uid } => {
+                forest::task::remove(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("remove: {e}");
                     process::exit(1);
                 });
-        }
+            }
 
-        cli::Commands::Show { uid } => {
-            forest::task::show(&uid).await.unwrap_or_else(|e| {
-                eprintln!("show: {e}");
-                process::exit(1);
-            });
-        }
+            cli::TaskCommands::Rename { uid, new_name } => {
+                forest::task::rename(&uid, new_name)
+                    .await
+                    .unwrap_or_else(|e| {
+                        eprintln!("rename: {e}");
+                        process::exit(1);
+                    });
+            }
 
-        cli::Commands::Edit { uid } => {
-            forest::task::edit(&uid).await.unwrap_or_else(|e| {
-                eprintln!("edit: {e}");
-                process::exit(1);
-            });
-        }
-
-        cli::Commands::Priority { uid, priority } => {
-            forest::task::priority(&uid, priority)
-                .await
-                .unwrap_or_else(|e| {
-                    eprintln!("priority: {e}");
+            cli::TaskCommands::Show { uid } => {
+                forest::task::show(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("show: {e}");
                     process::exit(1);
                 });
-        }
+            }
 
+            cli::TaskCommands::Edit { uid } => {
+                forest::task::edit(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("edit: {e}");
+                    process::exit(1);
+                });
+            }
+
+            cli::TaskCommands::Priority { uid, priority } => {
+                forest::task::priority(&uid, priority)
+                    .await
+                    .unwrap_or_else(|e| {
+                        eprintln!("priority: {e}");
+                        process::exit(1);
+                    });
+            }
+        },
         cli::Commands::Tree { command } => match command {
             cli::TreeCommands::List { format } => {
                 forest::tree::list(format.unwrap_or_default())
