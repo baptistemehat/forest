@@ -1,4 +1,3 @@
-use clap;
 use nanoid::nanoid;
 use std::char;
 use std::fmt;
@@ -15,12 +14,17 @@ pub enum ListFormat {
 }
 
 /// Unique Identifier
-#[derive(sqlx::Type, Clone)]
+#[derive(sqlx::Type, Clone, Default)]
 #[sqlx(transparent)]
 pub struct Uid(String);
 
 const UID_LENGTH: usize = 32;
 const SHORT_UID_LENGTH: usize = 7;
+
+/// UID alphabet
+const UID_ALPHABET: [char; 16] = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
+];
 
 impl Uid {
     /// Constructs a new Unique identifier
@@ -58,11 +62,6 @@ impl TryFrom<String> for Uid {
         }
     }
 }
-
-/// UID alphabet
-pub const UID_ALPHABET: [char; 16] = [
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
-];
 
 /// Priority of tasks.
 /// High priority is expressed with low integers:

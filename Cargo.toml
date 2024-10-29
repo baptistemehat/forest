@@ -3,17 +3,26 @@ name = "forest"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [
+	"forest_types"
+]
 
 [dependencies]
 clap = { version = "4.5.20", features = ["cargo", "derive"] }
+clap_complete = { version = "4.5.35", features = ["unstable-dynamic"]}
 chrono = "0.4.38"
 edit = "0.1.5"
 nanoid = "0.4.0"
-regex = "1.11.0"
 sqlx = { version="0.8.2", features = [ "sqlite", "runtime-tokio", "tls-native-tls" ] }
 tokio = { version = "1.40.0", features = ["full"]}
 xdg = "2.5.2"
+forest_types = {path="forest_types"}
+
+[build-dependencies]
+forest_types = {path="forest_types"}
+clap = { version = "4.5.20"}
+clap_complete = { version = "4.5.35"}
 
 [lints.rust]
 # https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html

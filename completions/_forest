@@ -1,0 +1,1049 @@
+#compdef forest
+
+autoload -U is-at-least
+
+_forest() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_forest_commands" \
+"*::: :->Forest" \
+&& ret=0
+    case $state in
+    (Forest)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-command-$line[1]:"
+        case $line[1] in
+            (task)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_forest__task_commands" \
+"*::: :->task" \
+&& ret=0
+
+    case $state in
+    (task)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-task-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+'-p+[Uid of parent task. By default, adds the task to the tree root]:UID: ' \
+'--parent=[Uid of parent task. By default, adds the task to the tree root]:UID: ' \
+'-d+[Description of the new task]:description: ' \
+'--description=[Description of the new task]:description: ' \
+'-e[Opens an editor to write the description of the new task]' \
+'--edit[Opens an editor to write the description of the new task]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Name of the new task:' \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the task:' \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the task:' \
+':new_name -- New name for the task:' \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the task:' \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the task:' \
+&& ret=0
+;;
+(priority)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the task:' \
+':priority -- Uid of the task:' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_forest__task__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-task-help-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(priority)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(tree)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_forest__tree_commands" \
+"*::: :->tree" \
+&& ret=0
+
+    case $state in
+    (tree)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-tree-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+'-f+[Formatting options]:FORMAT:((short\:"only display tree names"
+long\:""))' \
+'--format=[Formatting options]:FORMAT:((short\:"only display tree names"
+long\:""))' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+'-d+[Description of the new tree]:DESCRIPTION: ' \
+'--description=[Description of the new tree]:DESCRIPTION: ' \
+'-e[Opens an editor to write the description of the new tree]' \
+'--edit[Opens an editor to write the description of the new tree]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Name of the new tree:' \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Name of the tree:' \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Name of the tree:' \
+':new_name -- New name for the tree:' \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Name of the tree:' \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Name of the tree:' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_forest__tree__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-tree-help-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(note)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_forest__note_commands" \
+"*::: :->note" \
+&& ret=0
+
+    case $state in
+    (note)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-note-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+'-t[Show time tracking notes (hidden by default)]' \
+'--show-tt[Show time tracking notes (hidden by default)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'::tree_name -- Name of tree for which to add a note:' \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the note:' \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the note:' \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':uid -- Uid of the note:' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_forest__note__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-note-help-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(switch)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Name of the tree to switch to:' \
+&& ret=0
+;;
+(start)
+_arguments "${_arguments_options[@]}" : \
+'--at=[Start date and time of recording]:FORMAT: ' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::tree_name -- Name of tree for which to record time:' \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+'--at=[Stop date and time of recording]:FORMAT: ' \
+'-n[Do not create a new note]' \
+'--no-note[Do not create a new note]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(report)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_forest__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-help-command-$line[1]:"
+        case $line[1] in
+            (task)
+_arguments "${_arguments_options[@]}" : \
+":: :_forest__help__task_commands" \
+"*::: :->task" \
+&& ret=0
+
+    case $state in
+    (task)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-help-task-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(priority)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(tree)
+_arguments "${_arguments_options[@]}" : \
+":: :_forest__help__tree_commands" \
+"*::: :->tree" \
+&& ret=0
+
+    case $state in
+    (tree)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-help-tree-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(note)
+_arguments "${_arguments_options[@]}" : \
+":: :_forest__help__note_commands" \
+"*::: :->note" \
+&& ret=0
+
+    case $state in
+    (note)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:forest-help-note-command-$line[1]:"
+        case $line[1] in
+            (list)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(remove)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(edit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(switch)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stop)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(report)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_forest_commands] )) ||
+_forest_commands() {
+    local commands; commands=(
+'task:Perform operations on tasks' \
+'tree:Perform operations on trees' \
+'note:Perform operations on notes' \
+'switch:Switch to another tree' \
+'start:Start recording time' \
+'stop:Stop current time recording' \
+'status:Show current time recording' \
+'report:Reports time spent on each tree' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest commands' commands "$@"
+}
+(( $+functions[_forest__help_commands] )) ||
+_forest__help_commands() {
+    local commands; commands=(
+'task:Perform operations on tasks' \
+'tree:Perform operations on trees' \
+'note:Perform operations on notes' \
+'switch:Switch to another tree' \
+'start:Start recording time' \
+'stop:Stop current time recording' \
+'status:Show current time recording' \
+'report:Reports time spent on each tree' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest help commands' commands "$@"
+}
+(( $+functions[_forest__help__help_commands] )) ||
+_forest__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help help commands' commands "$@"
+}
+(( $+functions[_forest__help__note_commands] )) ||
+_forest__help__note_commands() {
+    local commands; commands=(
+'list:List all notes' \
+'add:Create a new note associated to the current tree' \
+'remove:Remove a note' \
+'show:Show content of a note' \
+'edit:Edit a note' \
+    )
+    _describe -t commands 'forest help note commands' commands "$@"
+}
+(( $+functions[_forest__help__note__add_commands] )) ||
+_forest__help__note__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help note add commands' commands "$@"
+}
+(( $+functions[_forest__help__note__edit_commands] )) ||
+_forest__help__note__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help note edit commands' commands "$@"
+}
+(( $+functions[_forest__help__note__list_commands] )) ||
+_forest__help__note__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help note list commands' commands "$@"
+}
+(( $+functions[_forest__help__note__remove_commands] )) ||
+_forest__help__note__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help note remove commands' commands "$@"
+}
+(( $+functions[_forest__help__note__show_commands] )) ||
+_forest__help__note__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help note show commands' commands "$@"
+}
+(( $+functions[_forest__help__report_commands] )) ||
+_forest__help__report_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help report commands' commands "$@"
+}
+(( $+functions[_forest__help__start_commands] )) ||
+_forest__help__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help start commands' commands "$@"
+}
+(( $+functions[_forest__help__status_commands] )) ||
+_forest__help__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help status commands' commands "$@"
+}
+(( $+functions[_forest__help__stop_commands] )) ||
+_forest__help__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help stop commands' commands "$@"
+}
+(( $+functions[_forest__help__switch_commands] )) ||
+_forest__help__switch_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help switch commands' commands "$@"
+}
+(( $+functions[_forest__help__task_commands] )) ||
+_forest__help__task_commands() {
+    local commands; commands=(
+'list:List tasks in the current tree' \
+'add:Add a new task to the current tree' \
+'remove:Remove a task from the current tree' \
+'rename:Rename a task in the current tree' \
+'show:Show description of a task in the current tree' \
+'edit:Edit description of a task in the current tree' \
+'priority:Set priority of a task in the current tree' \
+    )
+    _describe -t commands 'forest help task commands' commands "$@"
+}
+(( $+functions[_forest__help__task__add_commands] )) ||
+_forest__help__task__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help task add commands' commands "$@"
+}
+(( $+functions[_forest__help__task__edit_commands] )) ||
+_forest__help__task__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help task edit commands' commands "$@"
+}
+(( $+functions[_forest__help__task__list_commands] )) ||
+_forest__help__task__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help task list commands' commands "$@"
+}
+(( $+functions[_forest__help__task__priority_commands] )) ||
+_forest__help__task__priority_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help task priority commands' commands "$@"
+}
+(( $+functions[_forest__help__task__remove_commands] )) ||
+_forest__help__task__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help task remove commands' commands "$@"
+}
+(( $+functions[_forest__help__task__rename_commands] )) ||
+_forest__help__task__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help task rename commands' commands "$@"
+}
+(( $+functions[_forest__help__task__show_commands] )) ||
+_forest__help__task__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help task show commands' commands "$@"
+}
+(( $+functions[_forest__help__tree_commands] )) ||
+_forest__help__tree_commands() {
+    local commands; commands=(
+'list:List trees in the current forest' \
+'add:Add a new tree' \
+'remove:Remove a tree' \
+'rename:Rename a tree' \
+'show:Show description of a tree' \
+'edit:Edit description of a tree' \
+    )
+    _describe -t commands 'forest help tree commands' commands "$@"
+}
+(( $+functions[_forest__help__tree__add_commands] )) ||
+_forest__help__tree__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help tree add commands' commands "$@"
+}
+(( $+functions[_forest__help__tree__edit_commands] )) ||
+_forest__help__tree__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help tree edit commands' commands "$@"
+}
+(( $+functions[_forest__help__tree__list_commands] )) ||
+_forest__help__tree__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help tree list commands' commands "$@"
+}
+(( $+functions[_forest__help__tree__remove_commands] )) ||
+_forest__help__tree__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help tree remove commands' commands "$@"
+}
+(( $+functions[_forest__help__tree__rename_commands] )) ||
+_forest__help__tree__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help tree rename commands' commands "$@"
+}
+(( $+functions[_forest__help__tree__show_commands] )) ||
+_forest__help__tree__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest help tree show commands' commands "$@"
+}
+(( $+functions[_forest__note_commands] )) ||
+_forest__note_commands() {
+    local commands; commands=(
+'list:List all notes' \
+'add:Create a new note associated to the current tree' \
+'remove:Remove a note' \
+'show:Show content of a note' \
+'edit:Edit a note' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest note commands' commands "$@"
+}
+(( $+functions[_forest__note__add_commands] )) ||
+_forest__note__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note add commands' commands "$@"
+}
+(( $+functions[_forest__note__edit_commands] )) ||
+_forest__note__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note edit commands' commands "$@"
+}
+(( $+functions[_forest__note__help_commands] )) ||
+_forest__note__help_commands() {
+    local commands; commands=(
+'list:List all notes' \
+'add:Create a new note associated to the current tree' \
+'remove:Remove a note' \
+'show:Show content of a note' \
+'edit:Edit a note' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest note help commands' commands "$@"
+}
+(( $+functions[_forest__note__help__add_commands] )) ||
+_forest__note__help__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note help add commands' commands "$@"
+}
+(( $+functions[_forest__note__help__edit_commands] )) ||
+_forest__note__help__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note help edit commands' commands "$@"
+}
+(( $+functions[_forest__note__help__help_commands] )) ||
+_forest__note__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note help help commands' commands "$@"
+}
+(( $+functions[_forest__note__help__list_commands] )) ||
+_forest__note__help__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note help list commands' commands "$@"
+}
+(( $+functions[_forest__note__help__remove_commands] )) ||
+_forest__note__help__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note help remove commands' commands "$@"
+}
+(( $+functions[_forest__note__help__show_commands] )) ||
+_forest__note__help__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note help show commands' commands "$@"
+}
+(( $+functions[_forest__note__list_commands] )) ||
+_forest__note__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note list commands' commands "$@"
+}
+(( $+functions[_forest__note__remove_commands] )) ||
+_forest__note__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note remove commands' commands "$@"
+}
+(( $+functions[_forest__note__show_commands] )) ||
+_forest__note__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest note show commands' commands "$@"
+}
+(( $+functions[_forest__report_commands] )) ||
+_forest__report_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest report commands' commands "$@"
+}
+(( $+functions[_forest__start_commands] )) ||
+_forest__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest start commands' commands "$@"
+}
+(( $+functions[_forest__status_commands] )) ||
+_forest__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest status commands' commands "$@"
+}
+(( $+functions[_forest__stop_commands] )) ||
+_forest__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest stop commands' commands "$@"
+}
+(( $+functions[_forest__switch_commands] )) ||
+_forest__switch_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest switch commands' commands "$@"
+}
+(( $+functions[_forest__task_commands] )) ||
+_forest__task_commands() {
+    local commands; commands=(
+'list:List tasks in the current tree' \
+'add:Add a new task to the current tree' \
+'remove:Remove a task from the current tree' \
+'rename:Rename a task in the current tree' \
+'show:Show description of a task in the current tree' \
+'edit:Edit description of a task in the current tree' \
+'priority:Set priority of a task in the current tree' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest task commands' commands "$@"
+}
+(( $+functions[_forest__task__add_commands] )) ||
+_forest__task__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task add commands' commands "$@"
+}
+(( $+functions[_forest__task__edit_commands] )) ||
+_forest__task__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task edit commands' commands "$@"
+}
+(( $+functions[_forest__task__help_commands] )) ||
+_forest__task__help_commands() {
+    local commands; commands=(
+'list:List tasks in the current tree' \
+'add:Add a new task to the current tree' \
+'remove:Remove a task from the current tree' \
+'rename:Rename a task in the current tree' \
+'show:Show description of a task in the current tree' \
+'edit:Edit description of a task in the current tree' \
+'priority:Set priority of a task in the current tree' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest task help commands' commands "$@"
+}
+(( $+functions[_forest__task__help__add_commands] )) ||
+_forest__task__help__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help add commands' commands "$@"
+}
+(( $+functions[_forest__task__help__edit_commands] )) ||
+_forest__task__help__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help edit commands' commands "$@"
+}
+(( $+functions[_forest__task__help__help_commands] )) ||
+_forest__task__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help help commands' commands "$@"
+}
+(( $+functions[_forest__task__help__list_commands] )) ||
+_forest__task__help__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help list commands' commands "$@"
+}
+(( $+functions[_forest__task__help__priority_commands] )) ||
+_forest__task__help__priority_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help priority commands' commands "$@"
+}
+(( $+functions[_forest__task__help__remove_commands] )) ||
+_forest__task__help__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help remove commands' commands "$@"
+}
+(( $+functions[_forest__task__help__rename_commands] )) ||
+_forest__task__help__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help rename commands' commands "$@"
+}
+(( $+functions[_forest__task__help__show_commands] )) ||
+_forest__task__help__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task help show commands' commands "$@"
+}
+(( $+functions[_forest__task__list_commands] )) ||
+_forest__task__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task list commands' commands "$@"
+}
+(( $+functions[_forest__task__priority_commands] )) ||
+_forest__task__priority_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task priority commands' commands "$@"
+}
+(( $+functions[_forest__task__remove_commands] )) ||
+_forest__task__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task remove commands' commands "$@"
+}
+(( $+functions[_forest__task__rename_commands] )) ||
+_forest__task__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task rename commands' commands "$@"
+}
+(( $+functions[_forest__task__show_commands] )) ||
+_forest__task__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest task show commands' commands "$@"
+}
+(( $+functions[_forest__tree_commands] )) ||
+_forest__tree_commands() {
+    local commands; commands=(
+'list:List trees in the current forest' \
+'add:Add a new tree' \
+'remove:Remove a tree' \
+'rename:Rename a tree' \
+'show:Show description of a tree' \
+'edit:Edit description of a tree' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest tree commands' commands "$@"
+}
+(( $+functions[_forest__tree__add_commands] )) ||
+_forest__tree__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree add commands' commands "$@"
+}
+(( $+functions[_forest__tree__edit_commands] )) ||
+_forest__tree__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree edit commands' commands "$@"
+}
+(( $+functions[_forest__tree__help_commands] )) ||
+_forest__tree__help_commands() {
+    local commands; commands=(
+'list:List trees in the current forest' \
+'add:Add a new tree' \
+'remove:Remove a tree' \
+'rename:Rename a tree' \
+'show:Show description of a tree' \
+'edit:Edit description of a tree' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'forest tree help commands' commands "$@"
+}
+(( $+functions[_forest__tree__help__add_commands] )) ||
+_forest__tree__help__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree help add commands' commands "$@"
+}
+(( $+functions[_forest__tree__help__edit_commands] )) ||
+_forest__tree__help__edit_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree help edit commands' commands "$@"
+}
+(( $+functions[_forest__tree__help__help_commands] )) ||
+_forest__tree__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree help help commands' commands "$@"
+}
+(( $+functions[_forest__tree__help__list_commands] )) ||
+_forest__tree__help__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree help list commands' commands "$@"
+}
+(( $+functions[_forest__tree__help__remove_commands] )) ||
+_forest__tree__help__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree help remove commands' commands "$@"
+}
+(( $+functions[_forest__tree__help__rename_commands] )) ||
+_forest__tree__help__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree help rename commands' commands "$@"
+}
+(( $+functions[_forest__tree__help__show_commands] )) ||
+_forest__tree__help__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree help show commands' commands "$@"
+}
+(( $+functions[_forest__tree__list_commands] )) ||
+_forest__tree__list_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree list commands' commands "$@"
+}
+(( $+functions[_forest__tree__remove_commands] )) ||
+_forest__tree__remove_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree remove commands' commands "$@"
+}
+(( $+functions[_forest__tree__rename_commands] )) ||
+_forest__tree__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree rename commands' commands "$@"
+}
+(( $+functions[_forest__tree__show_commands] )) ||
+_forest__tree__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'forest tree show commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_forest" ]; then
+    _forest "$@"
+else
+    compdef _forest forest
+fi

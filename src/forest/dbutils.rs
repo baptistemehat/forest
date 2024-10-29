@@ -1,4 +1,4 @@
-use super::types;
+use forest_types::Uid;
 use std::error::Error;
 use std::path::PathBuf;
 
@@ -114,7 +114,7 @@ pub async fn get_current_tree_name(
     }
 }
 
-pub fn get_note_path(uid: &types::Uid) -> Option<PathBuf> {
+pub fn get_note_path(uid: &Uid) -> Option<PathBuf> {
     // get config directory
     let xdg_dirs = xdg::BaseDirectories::with_prefix(FOREST_CONFIG_DIR)
         .unwrap_or_else(|e| panic!("Cannot locate home directory: {e}"));

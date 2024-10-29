@@ -1,0 +1,9 @@
+[package]
+name = "forest_types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.20", features = ["derive"] }
+nanoid = "0.4.0"
+sqlx = { version="0.8.2"}

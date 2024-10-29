@@ -6,7 +6,7 @@ use std::fs::{self, File};
 use std::io::{self, BufRead};
 
 use super::ansi;
-use super::types::Uid;
+use forest_types::Uid;
 
 /// Finds a UID in note table that matches the provided partial uid
 ///

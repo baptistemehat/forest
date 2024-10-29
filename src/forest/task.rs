@@ -2,7 +2,7 @@ use std::error::Error;
 
 use super::ansi;
 use super::dbutils;
-use super::types::{Priority, Uid};
+use forest_types::{Priority, Uid};
 
 /// Finds a UID in task table that matches the provided partial uid
 ///
