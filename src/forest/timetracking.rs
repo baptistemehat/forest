@@ -5,7 +5,7 @@ use super::ansi;
 use super::dbutils;
 use super::notetaking;
 use super::tree;
-use super::types::Uid;
+use forest_types::Uid;
 
 const DATE_FORMAT: &str = "%Y-%m-%d";
 const TIME_FORMAT: &str = "%H:%M";

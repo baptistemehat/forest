@@ -2,7 +2,7 @@ use std::error::Error;
 
 use super::ansi;
 use super::dbutils;
-use super::types::{ListFormat, Uid};
+use forest_types::{ListFormat, Uid};
 
 /// Adds a tree to the forest
 ///
