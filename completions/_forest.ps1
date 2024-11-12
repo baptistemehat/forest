@@ -294,6 +294,18 @@ Register-ArgumentCompleter -Native -CommandName 'forest' -ScriptBlock {
             break
         }
         'forest;report' {
+            [CompletionResult]::new('-f', '-f', [CompletionResultType]::ParameterName, 'f')
+            [CompletionResult]::new('--from', '--from', [CompletionResultType]::ParameterName, 'from')
+            [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 't')
+            [CompletionResult]::new('--to', '--to', [CompletionResultType]::ParameterName, 'to')
+            [CompletionResult]::new('-y', '-y', [CompletionResultType]::ParameterName, 'y')
+            [CompletionResult]::new('--year', '--year', [CompletionResultType]::ParameterName, 'year')
+            [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'm')
+            [CompletionResult]::new('--month', '--month', [CompletionResultType]::ParameterName, 'month')
+            [CompletionResult]::new('-w', '-w', [CompletionResultType]::ParameterName, 'w')
+            [CompletionResult]::new('--week', '--week', [CompletionResultType]::ParameterName, 'week')
+            [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'd')
+            [CompletionResult]::new('--day', '--day', [CompletionResultType]::ParameterName, 'day')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             break

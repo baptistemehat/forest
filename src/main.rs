@@ -197,8 +197,8 @@ async fn main() {
             });
         }
 
-        cli::Commands::Report => {
-            forest::timetracking::report().await;
+        cli::Commands::Report { from, to } => {
+            forest::timetracking::report(from, to).await;
         }
     }
 }

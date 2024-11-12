@@ -112,6 +112,12 @@ complete -c forest -n "__fish_forest_using_subcommand stop" -l at -d 'Stop date 
 complete -c forest -n "__fish_forest_using_subcommand stop" -s n -l no-note -d 'Do not create a new note'
 complete -c forest -n "__fish_forest_using_subcommand stop" -s h -l help -d 'Print help'
 complete -c forest -n "__fish_forest_using_subcommand status" -s h -l help -d 'Print help'
+complete -c forest -n "__fish_forest_using_subcommand report" -s f -l from -r
+complete -c forest -n "__fish_forest_using_subcommand report" -s t -l to -r
+complete -c forest -n "__fish_forest_using_subcommand report" -s y -l year
+complete -c forest -n "__fish_forest_using_subcommand report" -s m -l month
+complete -c forest -n "__fish_forest_using_subcommand report" -s w -l week
+complete -c forest -n "__fish_forest_using_subcommand report" -s d -l day
 complete -c forest -n "__fish_forest_using_subcommand report" -s h -l help -d 'Print help'
 complete -c forest -n "__fish_forest_using_subcommand help; and not __fish_seen_subcommand_from task tree note switch start stop status report help" -f -a "task" -d 'Perform operations on tasks'
 complete -c forest -n "__fish_forest_using_subcommand help; and not __fish_seen_subcommand_from task tree note switch start stop status report help" -f -a "tree" -d 'Perform operations on trees'

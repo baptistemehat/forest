@@ -66,7 +66,32 @@ pub enum Commands {
     Status,
 
     /// Reports time spent on each tree
-    Report,
+    Report {
+        // /// Name of tree to get report of
+        // #[arg(value_name = "TREE")]
+        // #[arg(value_parser = forest_types::tree_name_parser)]
+        // tree_name: Option<String>,
+
+        /// 
+        #[arg(short = 'f', long = "from", value_name = "DATETIME")]
+        from: Option<String>,
+
+        /// 
+        #[arg(short = 't', long = "to", value_name = "DATETIME")]
+        to: Option<String>,
+
+        #[arg(short = 'y', long = "year")]
+        year: bool,
+
+        #[arg(short = 'm', long = "month")]
+        month: bool,
+        
+        #[arg(short = 'w', long = "week")]
+        week: bool,
+
+        #[arg(short = 'd', long = "day")]
+        day: bool,
+    },
 }
 
 #[derive(Subcommand)]

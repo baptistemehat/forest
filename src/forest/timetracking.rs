@@ -39,8 +39,9 @@ fn when(datetime: DateTime<Local>) -> String {
 ///
 /// # Errors
 /// Returns an error if the input string is ill-formed
-fn parse_user_datetime(
+fn parse_user_datetime_or(
     user_datetime_str: &Option<String>,
+    or_value: DateTime<Local>,
 ) -> Result<DateTime<Local>, Box<dyn Error>> {
     // Date time format to use for parsing user input
     let mut datetime_format = String::from(DATE_FORMAT);
@@ -77,7 +78,7 @@ fn parse_user_datetime(
                 .expect("Timezone convertion should not fail. See https://docs.rs/chrono/latest/chrono/offset/type.MappedLocalTime.html#variant.None")
         }
         // if no user datetime provided, return current time
-        None => Local::now(),
+        None => or_value,
     };
 
     Ok(datetime)
@@ -93,7 +94,7 @@ pub async fn start(
     tree_name: Option<String>,
     datetime: Option<String>,
 ) -> Result<(), Box<dyn Error>> {
-    let start_datetime = parse_user_datetime(&datetime)?;
+    let start_datetime = parse_user_datetime_or(&datetime, Local::now())?;
 
     let pool = dbutils::load_db().await;
 
@@ -191,7 +192,7 @@ pub async fn start(
 /// # Panics
 /// This function may panic if database operations fail
 pub async fn stop(datetime: Option<String>, create_note: bool) -> Result<(), Box<dyn Error>> {
-    let stop_datetime = parse_user_datetime(&datetime)?;
+    let stop_datetime = parse_user_datetime_or(&datetime, Local::now())?;
 
     let pool = dbutils::load_db().await;
 
@@ -348,7 +349,7 @@ pub async fn status() -> Result<(), Box<dyn Error>> {
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn report() {
+pub async fn report(from: Option<String>, to: Option<String>) -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
     let mut conn = pool
@@ -356,16 +357,52 @@ pub async fn report() {
         .await
         .expect("Acquiring connection to database should succeed");
 
-    // get total time spent on every tree
+    // get description of the desired tree
     let query_result = sqlx::query!(
         r#"
-        -- get total time spent on each tree
+        SELECT MIN("start") AS earliest_start
+        FROM frame;
+        "#,
+    )
+    .fetch_one(&mut *conn)
+    .await;
 
-        SELECT tree_name as name, SUM(f."end" - f."start") as total_time_spent
+    // error handling
+    let earliest_start_time = match query_result {
+        Ok(record) => record,
+        Err(query_error) => panic!("Database query failed: {query_error}"),
+    };
+
+
+    let from_datetime = parse_user_datetime_or(&from, earliest_start_time)?;
+
+    let to_datetime = parse_user_datetime_or(&to, DateTime::from(Local::now()))?;
+
+    let from_ms = from_datetime.timestamp_millis();
+
+    let to_ms = to_datetime.timestamp_millis();
+
+    // get total time spent on every tree during the time interval
+    let query_result = sqlx::query!(
+        r#"
+        -- get total time spent on each tree during the given time interval
+
+        SELECT tree_name as name, SUM(min(f."end", ?) - max(f."start", ?)) AS total_time_spent
         FROM frame f
         RIGHT JOIN task t ON f.task_id = t.id
+        WHERE
+            f."start" BETWEEN ? AND ?
+            OR f."end" BETWEEN ? AND ?
+            OR ? between f."end" AND f."start"
         GROUP BY tree_name;
         "#,
+        to_ms,
+        from_ms,
+        from_ms,
+        to_ms,
+        from_ms,
+        to_ms,
+        from_ms,
     )
     .fetch_all(&mut *conn)
     .await;
@@ -376,9 +413,33 @@ pub async fn report() {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
+    println!(
+        "From: {} {}",
+        ansi::format(
+            &from_datetime.format("%a %d %b %Y").to_string(),
+            ansi::ForestFormat::Date
+        ),
+        ansi::format(
+            &from_datetime.format("%H:%M").to_string(),
+            ansi::ForestFormat::Time
+        ),
+    );
+    println!(
+        "To:   {} {}",
+        ansi::format(
+            &to_datetime.format("%a %d %b %Y").to_string(),
+            ansi::ForestFormat::Date
+        ),
+        ansi::format(
+            &to_datetime.format("%H:%M").to_string(),
+            ansi::ForestFormat::Time
+        ),
+    );
+    println!();
     // print tree names and time spent
     for tree in records {
-        let time_delta = TimeDelta::milliseconds(tree.total_time_spent.unwrap_or(0));
+        let time_delta =
+            TimeDelta::milliseconds(tree.total_time_spent.unwrap_or(0.0).round() as i64);
         let hours = time_delta.num_hours();
         let minutes = time_delta.num_minutes() % 60;
         print!(
@@ -391,4 +452,6 @@ pub async fn report() {
         println!();
         println!();
     }
+
+    Ok(())
 }

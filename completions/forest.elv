@@ -241,6 +241,18 @@ set edit:completion:arg-completer[forest] = {|@words|
             cand --help 'Print help'
         }
         &'forest;report'= {
+            cand -f 'f'
+            cand --from 'from'
+            cand -t 't'
+            cand --to 'to'
+            cand -y 'y'
+            cand --year 'year'
+            cand -m 'm'
+            cand --month 'month'
+            cand -w 'w'
+            cand --week 'week'
+            cand -d 'd'
+            cand --day 'day'
             cand -h 'Print help'
             cand --help 'Print help'
         }
