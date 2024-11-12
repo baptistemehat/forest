@@ -373,8 +373,7 @@ pub async fn report(from: Option<String>, to: Option<String>) -> Result<(), Box<
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
-
-    let from_datetime = parse_user_datetime_or(&from, earliest_start_time)?;
+    let from_datetime = parse_user_datetime_or(&from, DateTime::from(DateTime::<Local>::MIN_UTC))?;
 
     let to_datetime = parse_user_datetime_or(&to, DateTime::from(Local::now()))?;
 
@@ -387,7 +386,7 @@ pub async fn report(from: Option<String>, to: Option<String>) -> Result<(), Box<
         r#"
         -- get total time spent on each tree during the given time interval
 
-        SELECT tree_name as name, SUM(min(f."end", ?) - max(f."start", ?)) AS total_time_spent
+        SELECT tree_name as name, SUM(min(coalesce(f."end", ?), ?) - max(f."start", ?)) AS total_time_spent
         FROM frame f
         RIGHT JOIN task t ON f.task_id = t.id
         WHERE
@@ -396,6 +395,7 @@ pub async fn report(from: Option<String>, to: Option<String>) -> Result<(), Box<
             OR ? between f."end" AND f."start"
         GROUP BY tree_name;
         "#,
+        to_ms,
         to_ms,
         from_ms,
         from_ms,
@@ -406,7 +406,6 @@ pub async fn report(from: Option<String>, to: Option<String>) -> Result<(), Box<
     )
     .fetch_all(&mut *conn)
     .await;
-
     // error handling
     let records = match query_result {
         Ok(records) => records,
@@ -437,21 +436,42 @@ pub async fn report(from: Option<String>, to: Option<String>) -> Result<(), Box<
     );
     println!();
     // print tree names and time spent
+    let mut total: TimeDelta = TimeDelta::milliseconds(0);
     for tree in records {
         let time_delta =
             TimeDelta::milliseconds(tree.total_time_spent.unwrap_or(0.0).round() as i64);
+        total += time_delta;
         let hours = time_delta.num_hours();
         let minutes = time_delta.num_minutes() % 60;
-        print!(
+        println!(
             "{} - {}h {}m",
             ansi::format(&tree.name, ansi::ForestFormat::TreeName),
             hours,
             minutes
         );
-
-        println!();
-        println!();
     }
+    println!();
+
+    // print total day time
+    let hours = total.num_hours();
+    let minutes = total.num_minutes() % 60;
+    println!(
+        "{} - {}h {}m",
+        ansi::format("total", ansi::ForestFormat::TreeName),
+        hours,
+        minutes
+    );
 
     Ok(())
+}
+
+pub async fn report_day() -> Result<(), Box<dyn Error>> {
+    let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+    let from = Local::now()
+        .with_time(midnight)
+        .unwrap()
+        .format("%H:%M")
+        .to_string();
+    let to = Local::now().format("%H:%M").to_string();
+    report(Some(from), Some(to)).await
 }

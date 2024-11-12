@@ -50,52 +50,52 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (add)
 _arguments "${_arguments_options[@]}" : \
-'-p+[Uid of parent task. By default, adds the task to the tree root]:UID: ' \
-'--parent=[Uid of parent task. By default, adds the task to the tree root]:UID: ' \
-'-d+[Description of the new task]:description: ' \
-'--description=[Description of the new task]:description: ' \
+'-p+[Uid of parent task. By default, adds the task to the tree root]:UID:_default' \
+'--parent=[Uid of parent task. By default, adds the task to the tree root]:UID:_default' \
+'-d+[Description of the new task]:description:_default' \
+'--description=[Description of the new task]:description:_default' \
 '-e[Opens an editor to write the description of the new task]' \
 '--edit[Opens an editor to write the description of the new task]' \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- Name of the new task:' \
+':name -- Name of the new task:_default' \
 && ret=0
 ;;
 (remove)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the task:' \
+':uid -- Uid of the task:_default' \
 && ret=0
 ;;
 (rename)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the task:' \
-':new_name -- New name for the task:' \
+':uid -- Uid of the task:_default' \
+':new_name -- New name for the task:_default' \
 && ret=0
 ;;
 (show)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the task:' \
+':uid -- Uid of the task:_default' \
 && ret=0
 ;;
 (edit)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the task:' \
+':uid -- Uid of the task:_default' \
 && ret=0
 ;;
 (priority)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the task:' \
-':priority -- Uid of the task:' \
+':uid -- Uid of the task:_default' \
+':priority -- Uid of the task:_default' \
 && ret=0
 ;;
 (help)
@@ -176,42 +176,42 @@ long\:""))' \
 ;;
 (add)
 _arguments "${_arguments_options[@]}" : \
-'-d+[Description of the new tree]:DESCRIPTION: ' \
-'--description=[Description of the new tree]:DESCRIPTION: ' \
+'-d+[Description of the new tree]:DESCRIPTION:_default' \
+'--description=[Description of the new tree]:DESCRIPTION:_default' \
 '-e[Opens an editor to write the description of the new tree]' \
 '--edit[Opens an editor to write the description of the new tree]' \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- Name of the new tree:' \
+':name -- Name of the new tree:_default' \
 && ret=0
 ;;
 (remove)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- Name of the tree:' \
+':name -- Name of the tree:_default' \
 && ret=0
 ;;
 (rename)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- Name of the tree:' \
-':new_name -- New name for the tree:' \
+':name -- Name of the tree:_default' \
+':new_name -- New name for the tree:_default' \
 && ret=0
 ;;
 (show)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- Name of the tree:' \
+':name -- Name of the tree:_default' \
 && ret=0
 ;;
 (edit)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- Name of the tree:' \
+':name -- Name of the tree:_default' \
 && ret=0
 ;;
 (help)
@@ -288,28 +288,28 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-'::tree_name -- Name of tree for which to add a note:' \
+'::tree_name -- Name of tree for which to add a note:_default' \
 && ret=0
 ;;
 (remove)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the note:' \
+':uid -- Uid of the note:_default' \
 && ret=0
 ;;
 (show)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the note:' \
+':uid -- Uid of the note:_default' \
 && ret=0
 ;;
 (edit)
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':uid -- Uid of the note:' \
+':uid -- Uid of the note:_default' \
 && ret=0
 ;;
 (help)
@@ -360,20 +360,20 @@ esac
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- Name of the tree to switch to:' \
+':name -- Name of the tree to switch to:_default' \
 && ret=0
 ;;
 (start)
 _arguments "${_arguments_options[@]}" : \
-'--at=[Start date and time of recording]:FORMAT: ' \
+'--at=[Start date and time of recording]:FORMAT:_default' \
 '-h[Print help]' \
 '--help[Print help]' \
-'::tree_name -- Name of tree for which to record time:' \
+'::tree_name -- Name of tree for which to record time:_default' \
 && ret=0
 ;;
 (stop)
 _arguments "${_arguments_options[@]}" : \
-'--at=[Stop date and time of recording]:FORMAT: ' \
+'--at=[Stop date and time of recording]:FORMAT:_default' \
 '-n[Do not create a new note]' \
 '--no-note[Do not create a new note]' \
 '-h[Print help]' \
@@ -388,16 +388,10 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (report)
 _arguments "${_arguments_options[@]}" : \
-'-f+[]:DATETIME: ' \
-'--from=[]:DATETIME: ' \
-'-t+[]:DATETIME: ' \
-'--to=[]:DATETIME: ' \
-'-y[]' \
-'--year[]' \
-'-m[]' \
-'--month[]' \
-'-w[]' \
-'--week[]' \
+'-f+[]:DATETIME:_default' \
+'--from=[]:DATETIME:_default' \
+'-t+[]:DATETIME:_default' \
+'--to=[]:DATETIME:_default' \
 '-d[]' \
 '--day[]' \
 '-h[Print help]' \

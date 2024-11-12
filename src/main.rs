@@ -197,8 +197,12 @@ async fn main() {
             });
         }
 
-        cli::Commands::Report { from, to } => {
-            forest::timetracking::report(from, to).await;
+        cli::Commands::Report { from, to, day } => {
+            if day {
+                forest::timetracking::report_day().await;
+            } else {
+                forest::timetracking::report(from, to).await;
+            }
         }
     }
 }
