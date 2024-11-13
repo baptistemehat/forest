@@ -841,7 +841,7 @@ _forest() {
             return 0
             ;;
         forest__report)
-            opts="-f -t -y -m -w -d -h --from --to --year --month --week --day --help"
+            opts="-f -t -d -w -m -y -h --from --to --day --week --month --year --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

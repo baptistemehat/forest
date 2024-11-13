@@ -72,25 +72,31 @@ pub enum Commands {
         // #[arg(value_parser = forest_types::tree_name_parser)]
         // tree_name: Option<String>,
 
-        /// 
+        /// Report recorded time from a specific date time
+        /// Defaults to ...
         #[arg(short = 'f', long = "from", value_name = "DATETIME")]
         from: Option<String>,
 
-        /// 
+        /// Report recorded time to a specific date time
+        /// Defaults to now
         #[arg(short = 't', long = "to", value_name = "DATETIME")]
         to: Option<String>,
 
-        #[arg(short = 'y', long = "year")]
-        year: bool,
+        /// Report recorded time for the current day
+        #[arg(short = 'd', long = "day")]
+        day: bool,
 
-        #[arg(short = 'm', long = "month")]
-        month: bool,
-
+        /// Report recorded time for the current week
         #[arg(short = 'w', long = "week")]
         week: bool,
 
-        #[arg(short = 'd', long = "day")]
-        day: bool,
+        /// Report recorded time for the current month
+        #[arg(short = 'm', long = "month")]
+        month: bool,
+
+        /// Report recorded time for the current year
+        #[arg(short = 'y', long = "year")]
+        year: bool,
     },
 }
 

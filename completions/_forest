@@ -388,18 +388,18 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (report)
 _arguments "${_arguments_options[@]}" : \
-'-f+[]:DATETIME:_default' \
-'--from=[]:DATETIME:_default' \
-'-t+[]:DATETIME:_default' \
-'--to=[]:DATETIME:_default' \
-'-y[]' \
-'--year[]' \
-'-m[]' \
-'--month[]' \
-'-w[]' \
-'--week[]' \
-'-d[]' \
-'--day[]' \
+'-f+[Report recorded time from a specific date time Defaults to ...]:DATETIME:_default' \
+'--from=[Report recorded time from a specific date time Defaults to ...]:DATETIME:_default' \
+'-t+[Report recorded time to a specific date time Defaults to now]:DATETIME:_default' \
+'--to=[Report recorded time to a specific date time Defaults to now]:DATETIME:_default' \
+'-d[Report recorded time for the current day]' \
+'--day[Report recorded time for the current day]' \
+'-w[Report recorded time for the current week]' \
+'--week[Report recorded time for the current week]' \
+'-m[Report recorded time for the current month]' \
+'--month[Report recorded time for the current month]' \
+'-y[Report recorded time for the current year]' \
+'--year[Report recorded time for the current year]' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
