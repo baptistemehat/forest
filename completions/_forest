@@ -392,6 +392,12 @@ _arguments "${_arguments_options[@]}" : \
 '--from=[]:DATETIME:_default' \
 '-t+[]:DATETIME:_default' \
 '--to=[]:DATETIME:_default' \
+'-y[]' \
+'--year[]' \
+'-m[]' \
+'--month[]' \
+'-w[]' \
+'--week[]' \
 '-d[]' \
 '--day[]' \
 '-h[Print help]' \

@@ -1,4 +1,6 @@
-use chrono::{DateTime, Local, NaiveDateTime, NaiveTime, TimeDelta, Utc};
+use chrono::{
+    DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, Utc, Weekday,
+};
 use std::error::Error;
 
 use super::ansi;
@@ -471,6 +473,46 @@ pub async fn report_day() -> Result<(), Box<dyn Error>> {
         .with_time(midnight)
         .unwrap()
         .format("%H:%M")
+        .to_string();
+    let to = Local::now().format("%H:%M").to_string();
+    report(Some(from), Some(to)).await
+}
+
+pub async fn report_week() -> Result<(), Box<dyn Error>> {
+    let current_year = Local::now().year();
+    let current_week = Local::now().iso_week().week();
+    let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+
+    let start_of_week = NaiveDate::from_isoywd_opt(current_year, current_week, Weekday::Mon).unwrap();
+    let from = start_of_week
+        .and_time(midnight)
+        .format("%Y-%m-%d %H:%M")
+        .to_string();
+    let to = Local::now().format("%H:%M").to_string();
+    report(Some(from), Some(to)).await
+}
+
+pub async fn report_month() -> Result<(), Box<dyn Error>> {
+    let current_year = Local::now().year();
+    let current_month = Local::now().month();
+    let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+
+    let start_of_month = NaiveDate::from_ymd_opt(current_year, current_month, 1).unwrap();
+    let from = start_of_month
+        .and_time(midnight)
+        .format("%Y-%m-%d %H:%M")
+        .to_string();
+    let to = Local::now().format("%H:%M").to_string();
+    report(Some(from), Some(to)).await
+}
+pub async fn report_year() -> Result<(), Box<dyn Error>> {
+    let current_year = Local::now().year();
+    let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+
+    let start_of_month = NaiveDate::from_ymd_opt(current_year, 1, 1).unwrap();
+    let from = start_of_month
+        .and_time(midnight)
+        .format("%Y-%m-%d %H:%M")
         .to_string();
     let to = Local::now().format("%H:%M").to_string();
     report(Some(from), Some(to)).await

@@ -7,7 +7,6 @@ mod forest;
 #[tokio::main]
 async fn main() {
     let cli_parser = cli::Cli::parse();
-
     match cli_parser.command {
         cli::Commands::Task { command } => match command {
             cli::TaskCommands::List => forest::task::list().await.unwrap_or_else(|e| {
@@ -197,9 +196,22 @@ async fn main() {
             });
         }
 
-        cli::Commands::Report { from, to, day } => {
+        cli::Commands::Report {
+            from,
+            to,
+            day,
+            week,
+            month,
+            year,
+        } => {
             if day {
                 forest::timetracking::report_day().await;
+            } else if week {
+                forest::timetracking::report_week().await;
+            } else if month {
+                forest::timetracking::report_month().await;
+            } else if year {
+                forest::timetracking::report_year().await;
             } else {
                 forest::timetracking::report(from, to).await;
             }

@@ -80,14 +80,14 @@ pub enum Commands {
         #[arg(short = 't', long = "to", value_name = "DATETIME")]
         to: Option<String>,
 
-        // #[arg(short = 'y', long = "year")]
-        // year: bool,
-        //
-        // #[arg(short = 'm', long = "month")]
-        // month: bool,
-        // 
-        // #[arg(short = 'w', long = "week")]
-        // week: bool,
+        #[arg(short = 'y', long = "year")]
+        year: bool,
+
+        #[arg(short = 'm', long = "month")]
+        month: bool,
+
+        #[arg(short = 'w', long = "week")]
+        week: bool,
 
         #[arg(short = 'd', long = "day")]
         day: bool,
