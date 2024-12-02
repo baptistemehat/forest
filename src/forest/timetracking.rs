@@ -1,9 +1,87 @@
-use chrono::{DateTime, Local, TimeDelta};
+use chrono::{DateTime, Local, NaiveDateTime, NaiveTime, TimeDelta, Utc};
 use std::error::Error;
 
+use super::ansi;
 use super::dbutils;
-use super::types;
+use super::notetaking;
+use super::tree;
+use forest_types::Uid;
 
+const DATE_FORMAT: &str = "%Y-%m-%d";
+const TIME_FORMAT: &str = "%H:%M";
+
+/// Returns a human-friendly representation of WHEN was the given datetime compared to now
+fn when(datetime: DateTime<Local>) -> String {
+    let delta = Local::now() - datetime;
+
+    if delta.num_weeks() > 1 {
+        return format!("{} weeks ago", delta.num_weeks());
+    } else if delta.num_days() > 6 {
+        return String::from("a week ago");
+    } else if delta.num_days() > 1 {
+        return format!("{} days ago", delta.num_days());
+    } else if delta.num_hours() > 23 {
+        return String::from("a day ago");
+    } else if delta.num_hours() > 1 {
+        return format!("{} hours ago", delta.num_hours());
+    } else if delta.num_minutes() > 59 {
+        return String::from("an hour ago");
+    } else if delta.num_minutes() > 1 {
+        return format!("{} minutes ago", delta.num_minutes());
+    }
+    String::from("just now")
+}
+
+/// Parses a user datetime and returns the parse Datetime.
+/// If input user datetime is `None`, returns `Local::now()`.
+///
+/// Input format are "%Y-%m-%d %H:%M" "%H:%M".
+///
+/// # Errors
+/// Returns an error if the input string is ill-formed
+fn parse_user_datetime(
+    user_datetime_str: &Option<String>,
+) -> Result<DateTime<Local>, Box<dyn Error>> {
+    // Date time format to use for parsing user input
+    let mut datetime_format = String::from(DATE_FORMAT);
+    datetime_format.push(' ');
+    datetime_format.push_str(TIME_FORMAT);
+
+    let datetime: DateTime<Local> = match user_datetime_str {
+        // if user datetime provided, parse it
+        Some(datetime) => {
+            // try to parse DATE AND TIME format "%Y-%m-%d %H:%M"
+            let naive_datetime = match NaiveDateTime::parse_from_str(datetime, &datetime_format) {
+                Ok(naive_datetime) => naive_datetime,
+
+                // if failed to parse DATE AND TIME format "%Y-%m-%d %H:%M",
+                // try to parse only TIME format "%H:%M"
+                Err(_) => match NaiveTime::parse_from_str(datetime, TIME_FORMAT) {
+                    Ok(naive_time) => Utc::now().date_naive().and_time(naive_time),
+
+                    // failed to parse both formats
+                    Err(_) => {
+                        return Err(format!(
+                            "Illegal date format. Date format should be \"{}\" or \"{}\"",
+                            datetime_format, TIME_FORMAT
+                        )
+                        .into());
+                    }
+                },
+            };
+
+            // fit the parsed date time to the local timezone
+            naive_datetime
+                .and_local_timezone(Local)
+                .single()
+                .expect("Timezone convertion should not fail. See https://docs.rs/chrono/latest/chrono/offset/type.MappedLocalTime.html#variant.None")
+        }
+        // if no user datetime provided, return current time
+        None => Local::now(),
+    };
+
+    Ok(datetime)
+}
 /// Starts recording time spent on a tree
 ///
 /// # Errors
@@ -11,18 +89,18 @@ use super::types;
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
+pub async fn start(
+    tree_name: Option<String>,
+    datetime: Option<String>,
+) -> Result<(), Box<dyn Error>> {
+    let start_datetime = parse_user_datetime(&datetime)?;
+
     let pool = dbutils::load_db().await;
 
+    // get tree name if one was provided, current tree name otherwise
     let tree_name = match tree_name {
         Some(name) => name,
-        None => match dbutils::get_current_tree_name(&pool).await{
-            Some(current_tree_name) => current_tree_name,
-            None => return Err(
-                "no current tree found. it seems like your forest is empty.\nconsider adding a tree."
-                .into(),
-            ),
-        },
+        None => dbutils::get_current_tree_name(&pool).await?,
     };
 
     let mut conn = pool
@@ -53,14 +131,11 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     };
 
     // stop any previous recording
-    let _ = stop().await;
-
-    // get current local time
-    let now = Local::now();
+    let _ = stop(datetime, true).await;
 
     // insert a new time frame into the frame table
-    let new_frame_id = types::generate_uid();
-    let start_time = now.timestamp_millis();
+    let new_frame_uid = Uid::new();
+    let start_time = start_datetime.timestamp_millis();
     let end_time: Option<i32> = None;
     let root_task_id = task.id;
     let query_result = sqlx::query!(
@@ -68,7 +143,7 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
         INSERT INTO frame("id", "start", "end", "task_id")
         VALUES(?, ?, ?, ?);
         "#,
-        new_frame_id,
+        new_frame_uid,
         start_time,
         end_time,
         root_task_id,
@@ -95,9 +170,15 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "Started recording time on tree '{tree_name}' at {}",
-        now.format("%Y-%m-%d %H:%M:%S")
+        "Started recording time on tree {} at {}",
+        ansi::format(&tree_name, ansi::ForestFormat::TreeName),
+        ansi::format(
+            &start_datetime.format("%H:%M").to_string(),
+            ansi::ForestFormat::Time
+        )
     );
+
+    tree::switch(&tree_name).await?;
 
     Ok(())
 }
@@ -109,7 +190,9 @@ pub async fn start(tree_name: Option<String>) -> Result<(), Box<dyn Error>> {
 ///
 /// # Panics
 /// This function may panic if database operations fail
-pub async fn stop() -> Result<(), Box<dyn Error>> {
+pub async fn stop(datetime: Option<String>, create_note: bool) -> Result<(), Box<dyn Error>> {
+    let stop_datetime = parse_user_datetime(&datetime)?;
+
     let pool = dbutils::load_db().await;
 
     let mut conn = pool
@@ -141,9 +224,8 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
         Err(query_error) => panic!("Database query failed: {query_error}"),
     };
 
-    let now = Local::now();
     // update end time of started time tracking frame(s)
-    let end_time = now.timestamp_millis();
+    let end_time = stop_datetime.timestamp_millis();
     let query_result = sqlx::query!(
         r#"
         UPDATE frame
@@ -168,13 +250,25 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
     // in case multiple time recordings were started
     // print stopping message for each
     for frame in started_frames {
+        if create_note {
+            // create a new note to write what was done in this work session
+            notetaking::add(Some(frame.tree_name.clone()), true).await?;
+        }
+
         let start_time: DateTime<Local> =
             DateTime::from_timestamp_millis(frame.start).unwrap().into();
         println!(
-            "Stopped recording time on tree '{}' at {} (Sarted at {})",
-            frame.tree_name,
-            now.format("%Y-%m-%d %H:%M:%S"),
-            start_time.format("%Y-%m-%d %H:%M:%S")
+            "Stopped recording time on tree {}, started {} ({} {})",
+            ansi::format(&frame.tree_name, ansi::ForestFormat::TreeName),
+            ansi::format(&when(start_time), ansi::ForestFormat::Time),
+            ansi::format(
+                &start_time.format("%Y-%m-%d").to_string(),
+                ansi::ForestFormat::Date
+            ),
+            ansi::format(
+                &start_time.format("%H:%M").to_string(),
+                ansi::ForestFormat::Time
+            ),
         );
     }
 
@@ -191,13 +285,7 @@ pub async fn stop() -> Result<(), Box<dyn Error>> {
 pub async fn status() -> Result<(), Box<dyn Error>> {
     let pool = dbutils::load_db().await;
 
-    let current_tree_name = match dbutils::get_current_tree_name(&pool).await {
-        Some(name) => name,
-        None => return Err(
-            "No current tree found. It seems like your forest is empty.\nConsider adding a tree."
-                .into(),
-        ),
-    };
+    let current_tree_name = dbutils::get_current_tree_name(&pool).await?;
 
     let mut conn = pool
         .acquire()
@@ -223,7 +311,10 @@ pub async fn status() -> Result<(), Box<dyn Error>> {
     };
 
     // print current tree
-    println!("On tree '{current_tree_name}'");
+    println!(
+        "On tree {}",
+        ansi::format(&current_tree_name, ansi::ForestFormat::TreeName)
+    );
 
     // print current time tracking recording if any
     match current_frame {
@@ -231,9 +322,17 @@ pub async fn status() -> Result<(), Box<dyn Error>> {
             let start_time: DateTime<Local> =
                 DateTime::from_timestamp_millis(frame.start).unwrap().into();
             println!(
-                "Recording time on tree '{}'. Sarted at {}",
-                frame.tree_name,
-                start_time.format("%Y-%m-%d %H:%M:%S")
+                "Recording time on tree {}, started {} ({} {})",
+                ansi::format(&frame.tree_name, ansi::ForestFormat::TreeName),
+                ansi::format(&when(start_time), ansi::ForestFormat::Time),
+                ansi::format(
+                    &start_time.format("%Y-%m-%d").to_string(),
+                    ansi::ForestFormat::Date
+                ),
+                ansi::format(
+                    &start_time.format("%H:%M").to_string(),
+                    ansi::ForestFormat::Time
+                ),
             );
         }
         None => println!("No recording started."),
@@ -282,8 +381,12 @@ pub async fn report() {
         let time_delta = TimeDelta::milliseconds(tree.total_time_spent.unwrap_or(0));
         let hours = time_delta.num_hours();
         let minutes = time_delta.num_minutes() % 60;
-        let seconds = time_delta.num_seconds() % 60;
-        print!("{} - {}h {}m {}s", tree.name, hours, minutes, seconds);
+        print!(
+            "{} - {}h {}m",
+            ansi::format(&tree.name, ansi::ForestFormat::TreeName),
+            hours,
+            minutes
+        );
 
         println!();
         println!();

@@ -9,72 +9,71 @@ async fn main() {
     let cli_parser = cli::Cli::parse();
 
     match cli_parser.command {
-        cli::Commands::List { show_uid } => {
-            forest::task::list(show_uid).await.unwrap_or_else(|e| {
+        cli::Commands::Task { command } => match command {
+            cli::TaskCommands::List => forest::task::list().await.unwrap_or_else(|e| {
                 eprintln!("list: {e}");
                 process::exit(1);
-            })
-        }
+            }),
 
-        cli::Commands::Add {
-            name,
-            parent_uid,
-            description,
-            edit,
-        } => forest::task::add(
-            name,
-            parent_uid.as_ref(),
-            description.unwrap_or_default(),
-            edit,
-        )
-        .await
-        .unwrap_or_else(|e| {
-            eprintln!("add: {e}");
-            process::exit(1);
-        }),
-
-        cli::Commands::Remove { uid } => {
-            forest::task::remove(&uid).await.unwrap_or_else(|e| {
-                eprintln!("remove: {e}");
+            cli::TaskCommands::Add {
+                name,
+                parent_uid,
+                description,
+                edit,
+            } => forest::task::add(
+                name,
+                parent_uid.as_ref(),
+                description.unwrap_or_default(),
+                edit,
+            )
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("add: {e}");
                 process::exit(1);
-            });
-        }
+            }),
 
-        cli::Commands::Rename { uid, new_name } => {
-            forest::task::rename(&uid, new_name)
-                .await
-                .unwrap_or_else(|e| {
-                    eprintln!("rename: {e}");
+            cli::TaskCommands::Remove { uid } => {
+                forest::task::remove(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("remove: {e}");
                     process::exit(1);
                 });
-        }
+            }
 
-        cli::Commands::Show { uid } => {
-            forest::task::show(&uid).await.unwrap_or_else(|e| {
-                eprintln!("show: {e}");
-                process::exit(1);
-            });
-        }
+            cli::TaskCommands::Rename { uid, new_name } => {
+                forest::task::rename(&uid, new_name)
+                    .await
+                    .unwrap_or_else(|e| {
+                        eprintln!("rename: {e}");
+                        process::exit(1);
+                    });
+            }
 
-        cli::Commands::Edit { uid } => {
-            forest::task::edit(&uid).await.unwrap_or_else(|e| {
-                eprintln!("edit: {e}");
-                process::exit(1);
-            });
-        }
-
-        cli::Commands::Priority { uid, priority } => {
-            forest::task::priority(&uid, priority)
-                .await
-                .unwrap_or_else(|e| {
-                    eprintln!("priority: {e}");
+            cli::TaskCommands::Show { uid } => {
+                forest::task::show(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("show: {e}");
                     process::exit(1);
                 });
-        }
+            }
 
+            cli::TaskCommands::Edit { uid } => {
+                forest::task::edit(&uid).await.unwrap_or_else(|e| {
+                    eprintln!("edit: {e}");
+                    process::exit(1);
+                });
+            }
+
+            cli::TaskCommands::Priority { uid, priority } => {
+                forest::task::priority(&uid, priority)
+                    .await
+                    .unwrap_or_else(|e| {
+                        eprintln!("priority: {e}");
+                        process::exit(1);
+                    });
+            }
+        },
         cli::Commands::Tree { command } => match command {
-            cli::TreeCommands::List { format, show_uid } => {
-                forest::tree::list(format.unwrap_or_default(), show_uid)
+            cli::TreeCommands::List { format } => {
+                forest::tree::list(format.unwrap_or_default())
                     .await
                     .unwrap_or_else(|e| {
                         eprintln!("list: {e}");
@@ -127,8 +126,8 @@ async fn main() {
         },
 
         cli::Commands::Note { command } => match command {
-            cli::NoteCommands::List { show_uid } => {
-                forest::notetaking::list(show_uid)
+            cli::NoteCommands::List { show_time_tracking } => {
+                forest::notetaking::list(show_time_tracking)
                     .await
                     .unwrap_or_else(|e| {
                         eprintln!("note list: {e}");
@@ -137,7 +136,7 @@ async fn main() {
             }
 
             cli::NoteCommands::Add { tree_name } => {
-                forest::notetaking::add(tree_name)
+                forest::notetaking::add(tree_name, false)
                     .await
                     .unwrap_or_else(|e| {
                         eprintln!("note add: {e}");
@@ -172,8 +171,8 @@ async fn main() {
             });
         }
 
-        cli::Commands::Start { tree_name } => {
-            forest::timetracking::start(tree_name)
+        cli::Commands::Start { tree_name, at } => {
+            forest::timetracking::start(tree_name, at)
                 .await
                 .unwrap_or_else(|e| {
                     eprintln!("start: {e}");
@@ -181,11 +180,15 @@ async fn main() {
                 });
         }
 
-        cli::Commands::Stop => {
-            forest::timetracking::stop().await.unwrap_or_else(|e| {
-                eprintln!("stop: {e}");
-                process::exit(1);
-            });
+        cli::Commands::Stop { at, no_note } => {
+            // Note creation is enabled by default
+            let create_note = !no_note;
+            forest::timetracking::stop(at, create_note)
+                .await
+                .unwrap_or_else(|e| {
+                    eprintln!("stop: {e}");
+                    process::exit(1);
+                });
         }
         cli::Commands::Status => {
             forest::timetracking::status().await.unwrap_or_else(|e| {
