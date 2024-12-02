@@ -799,7 +799,7 @@ _forest() {
             return 0
             ;;
         forest__note__list)
-            opts="-h --help"
+            opts="-t -h --show-tt --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

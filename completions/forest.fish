@@ -93,6 +93,7 @@ complete -c forest -n "__fish_forest_using_subcommand note; and not __fish_seen_
 complete -c forest -n "__fish_forest_using_subcommand note; and not __fish_seen_subcommand_from list add remove show edit help" -f -a "show" -d 'Show content of a note'
 complete -c forest -n "__fish_forest_using_subcommand note; and not __fish_seen_subcommand_from list add remove show edit help" -f -a "edit" -d 'Edit a note'
 complete -c forest -n "__fish_forest_using_subcommand note; and not __fish_seen_subcommand_from list add remove show edit help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c forest -n "__fish_forest_using_subcommand note; and __fish_seen_subcommand_from list" -s t -l show-tt -d 'Show time tracking notes (hidden by default)'
 complete -c forest -n "__fish_forest_using_subcommand note; and __fish_seen_subcommand_from list" -s h -l help -d 'Print help'
 complete -c forest -n "__fish_forest_using_subcommand note; and __fish_seen_subcommand_from add" -s h -l help -d 'Print help'
 complete -c forest -n "__fish_forest_using_subcommand note; and __fish_seen_subcommand_from remove" -s h -l help -d 'Print help'

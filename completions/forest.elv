@@ -179,6 +179,8 @@ set edit:completion:arg-completer[forest] = {|@words|
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'forest;note;list'= {
+            cand -t 'Show time tracking notes (hidden by default)'
+            cand --show-tt 'Show time tracking notes (hidden by default)'
             cand -h 'Print help'
             cand --help 'Print help'
         }
