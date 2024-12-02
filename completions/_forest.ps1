@@ -216,8 +216,6 @@ Register-ArgumentCompleter -Native -CommandName 'forest' -ScriptBlock {
             break
         }
         'forest;note;list' {
-            [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Show time tracking notes (hidden by default)')
-            [CompletionResult]::new('--show-tt', '--show-tt', [CompletionResultType]::ParameterName, 'Show time tracking notes (hidden by default)')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             break

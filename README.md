@@ -48,3 +48,8 @@ I started this project for three main resons:
 * I've tested a few tools to organise my tasks, track my time and take notes for my personal projects but I haven't yet found a single tool that suits all my needs at once. So, why not create my own!
 * I simply like the terminal as a user interface and wanted to explore the process of designing modern cli apps.
 
+
+
+## Take notes
+- `forest note`
+- `forest diary`

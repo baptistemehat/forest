@@ -287,6 +287,58 @@ pub enum NoteCommands {
     },
 }
 
+
+#[derive(Subcommand)]
+pub enum DiaryCommands { 
+    /// List all notes
+    #[clap(alias = "ls")]
+    List,
+
+    // /// Create a new note associated to the current tree
+    // Add {
+    //     /// Name of tree for which to add a note
+    //     #[arg(value_name = "TREE")]
+    //     #[arg(value_parser = forest_types::tree_name_parser)]
+    //     tree_name: Option<String>,
+    //
+    //     /// Create a diary note
+    //     #[arg(short = 'd', long = "diary")]
+    //     diary: bool,
+    // },
+    //
+    // /// Remove a note
+    // #[clap(alias = "rm")]
+    // Remove {
+    //     /// Uid of the note
+    //     #[arg(value_name = "UID")]
+    //     #[arg(value_parser = forest_types::uid_parser)]
+    //     uid: String,
+    // },
+
+    /// Show content of a note
+    Show {
+        /// Uid of the note
+        #[arg(value_name = "UID")]
+        #[arg(value_parser = forest_types::uid_parser)]
+        uid: String,
+        
+        /// Show the diary note
+        #[arg(short = 'd', long = "diary")]
+        diary: bool,
+    },
+
+    /// Edit todays diary note
+    Edit {
+        /// Edit a specific diary note
+        /// Supports: 
+        ///  - 20241103 or 1103
+        ///  - Monday, Tue, ...
+        ///  - Yesterday
+        date: Option<String>,
+    },
+
+}
+
 #[test]
 fn verify_cli() {
     use clap::CommandFactory;

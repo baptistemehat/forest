@@ -278,8 +278,6 @@ _arguments "${_arguments_options[@]}" : \
         case $line[1] in
             (list)
 _arguments "${_arguments_options[@]}" : \
-'-t[Show time tracking notes (hidden by default)]' \
-'--show-tt[Show time tracking notes (hidden by default)]' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
