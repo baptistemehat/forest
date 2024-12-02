@@ -14,6 +14,30 @@ As such, it provides a neat cli to help you:
 * analyse your time-tracking records to better understand where you spend your time
 * take notes on your work to save your thoughts and ideas
 
+## Install
+Forest is still a work in progres and does not provide pre-built packages yet.
+To install `forest`, you will need to build from source using the rust toolchain:
+
+1) Install the rust toolchain via `rustup`:
+
+follow the instructions presented here: [https://rustup.rs/](https://rustup.rs/)
+
+2) Clone this repo:
+```sh
+git clone https://github.com/baptistemehat/forest.git
+```
+
+3) Build and install forest:
+```sh
+cd forest
+cargo install --path .
+```
+
+4) Check that `forest` is properly installed:
+```
+forest --version
+```
+
 ## Status
 This project is in an early development stage and is a work in progress.
 
