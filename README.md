@@ -1,7 +1,7 @@
 # Forest - terminal-based project manager
 
 > [!IMPORTANT]  
-> This project is in an early development stage and is a work in progress.
+> This project is in an early development stage and not actively maintained due to the limited time I can dedicate to it.
 
 
 ## Overview
